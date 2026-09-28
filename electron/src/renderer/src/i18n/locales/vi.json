@@ -340,6 +340,7 @@
     "working": "Đang xử lý…"
   },
   "clone": {
+    "auto_merge_hint": "Chọn hoặc thả tối đa 20 đoạn âm thanh của cùng một người nói. Các đoạn được tự động ghép theo thứ tự chọn.",
     "text_label": "Văn bản",
     "paste": "Dán",
     "paste_failed": "Quyền truy cập bảng nhớ tạm đã bị chặn. Hãy dùng bàn phím để dán trực tiếp vào ô văn bản.",

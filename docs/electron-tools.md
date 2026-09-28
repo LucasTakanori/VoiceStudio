@@ -1,5 +1,18 @@
 # Electron tools workspace
 
+Voice Clone also accepts multiple reference clips directly: select or drop up to
+20 recordings of the same speaker in the reference upload area. Multiple clips
+are automatically concatenated in the order supplied by the file picker or drop
+into one WAV before preview, transcription, profile saving, or generation. One
+file keeps its original format. The profile reference replacement picker uses
+the same behavior. Failed merges preserve the current reference; a newer upload
+or recording supersedes a pending merge.
+
+The combined clone reference still has the existing 75-second maximum, and the
+selected engine's reference-window limits still apply (merging does not make an
+engine use every second). Use Tools > Merge audio to manually reorder clips or
+export a longer merged WAV. The merge endpoint's size limits below also apply.
+
 The Tools workspace provides these utility panes:
 
 - Directorial AI parses direction into instruction, translation hint, rate bias,

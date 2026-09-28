@@ -567,6 +567,7 @@
     "convert_desc": "Zeg het één keer — hoor het in een andere stem. Spraak naar spraak, volledig lokaal."
   },
   "clone": {
+    "auto_merge_hint": "Selecteer of sleep maximaal 20 fragmenten van dezelfde spreker. Meerdere fragmenten worden automatisch in selectievolgorde samengevoegd.",
     "text_label": "Tekst",
     "paste": "Plakken",
     "paste_failed": "Toegang tot het klembord is geblokkeerd. Plak rechtstreeks in het tekstveld met het toetsenbord.",

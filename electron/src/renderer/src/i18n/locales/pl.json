@@ -344,6 +344,7 @@
     "working": "Przetwarzanie…"
   },
   "clone": {
+    "auto_merge_hint": "Wybierz lub upuść do 20 nagrań tej samej osoby. Nagrania zostaną automatycznie połączone w kolejności wyboru.",
     "text_label": "Tekst",
     "paste": "Wklej",
     "paste_failed": "Dostęp do schowka został zablokowany. Wklej bezpośrednio do pola tekstowego za pomocą klawiatury.",

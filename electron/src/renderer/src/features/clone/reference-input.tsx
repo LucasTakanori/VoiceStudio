@@ -6,6 +6,7 @@ import { RecordingInputs } from '@/components/recording-inputs';
 import { useRecording } from '@/hooks/use-recording';
 import { useEngines } from '@/hooks/use-engines';
 import { CLONE_MAX_SECONDS, REF_HARD_MAX_SECONDS } from '@/lib/api/generate';
+import { apiFetch, describeError } from '@/lib/api/client';
 import { probeAudioDuration } from '@/lib/audio/probe';
 import { referenceUsageNote } from '@/lib/reference-usage';
 import { setReferenceFile, type SetReferenceResult } from '@/lib/store/reference';
@@ -19,7 +20,7 @@ function isAudioFile(file: File): boolean {
   return file.type.startsWith('audio/') || AUDIO_EXT.test(file.name);
 }
 
-type IngestFn = (file: File | null) => Promise<void>;
+type IngestFn = (input: File | File[] | null) => Promise<void>;
 
 /** Receives an accepted clip instead of the composer's shared reference. */
 export type AcceptReference = (file: File, durationSeconds: number | null) => void;
@@ -40,32 +41,74 @@ async function checkClip(file: File): Promise<SetReferenceResult> {
  */
 type PickToken = { current: number };
 
-function useIngest(onAccept?: AcceptReference, sharedPick?: PickToken): IngestFn {
+function useIngest(onAccept?: AcceptReference, sharedPick?: PickToken) {
   const { t } = useTranslation();
   // Monotonic pick token: a slow probe for an earlier clip must never replace
   // (or toast over) a later one. Zones shown together share one token, so an
   // upload probe cannot land after a newer recording.
   const ownPick = useRef(0);
   const latestPick = sharedPick ?? ownPick;
-  return async (file) => {
-    if (!file) return;
+  const request = useRef<AbortController | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(
+    () => () => {
+      request.current?.abort();
+      // Shared tokens are retired by ReferenceSourcePicker.
+      if (!sharedPick) ownPick.current += 1;
+    },
+    [sharedPick],
+  );
+  const ingestFile: IngestFn = async (input) => {
+    const files = input ? (Array.isArray(input) ? input : [input]) : [];
+    if (!files.length) return;
     const pick = ++latestPick.current;
-    if (!isAudioFile(file)) {
-      toast.error(t('clone.unsupported_audio'));
-      return;
-    }
-    const result: SetReferenceResult = onAccept
-      ? await checkClip(file)
-      : await setReferenceFile(file);
-    if (pick !== latestPick.current) return;
-    if (onAccept && result.ok) onAccept(file, result.durationSeconds);
-    // An accepted long clip gets ReferenceUsageNote beside it instead: how
-    // much of it the active engine really uses (#2281).
-    if (!result.ok) {
-      const duration = Math.round(result.durationSeconds ?? 0);
-      toast.error(t('tts_errors.too_long', { duration, max: REF_HARD_MAX_SECONDS }));
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    const current = () => pick === latestPick.current && !controller.signal.aborted;
+    setBusy(files.length > 1);
+    try {
+      if (files.some((file) => !isAudioFile(file))) {
+        toast.error(t('clone.unsupported_audio'));
+        return;
+      }
+      if (files.length > 20) {
+        toast.error(t('tools.merge_too_many_files'));
+        return;
+      }
+      let file = files[0]!;
+      if (files.length > 1) {
+        const body = new FormData();
+        for (const part of files) body.append('files', part, part.name);
+        const response = await apiFetch('/tools/merge-audio', {
+          method: 'POST',
+          body,
+          signal: controller.signal,
+        });
+        const audio = await response.blob();
+        if (!current()) return;
+        file = new File([audio], 'merged-reference.wav', { type: 'audio/wav' });
+      }
+      const result: SetReferenceResult = onAccept
+        ? await checkClip(file)
+        : await setReferenceFile(file, current);
+      if (!current()) return;
+      if (onAccept && result.ok) onAccept(file, result.durationSeconds);
+      // The existing usage note explains engine-specific trimming of long clips.
+      if (!result.ok) {
+        const duration = Math.round(result.durationSeconds ?? 0);
+        toast.error(t('tts_errors.too_long', { duration, max: REF_HARD_MAX_SECONDS }));
+      }
+    } catch (error) {
+      if (current()) toast.error(describeError(error));
+    } finally {
+      if (request.current === controller && !controller.signal.aborted) {
+        request.current = null;
+        setBusy(false);
+      }
     }
   };
+  return { ingestFile, busy };
 }
 
 /** How much of a clip longer than the 5–15 s recommendation the active engine uses. */
@@ -90,7 +133,7 @@ export function UploadZone({
   pickToken,
 }: { onAccept?: AcceptReference; pickToken?: PickToken } = {}) {
   const { t } = useTranslation();
-  const ingestFile = useIngest(onAccept, pickToken);
+  const { ingestFile, busy } = useIngest(onAccept, pickToken);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const id = useId();
@@ -98,7 +141,7 @@ export function UploadZone({
   const onDrop = (event: DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
     setDragging(false);
-    void ingestFile(event.dataTransfer.files[0] ?? null);
+    void ingestFile(Array.from(event.dataTransfer.files));
   };
 
   return (
@@ -108,9 +151,10 @@ export function UploadZone({
         id={id}
         type="file"
         accept={ACCEPT}
+        multiple
         className="sr-only"
         onChange={(event) => {
-          void ingestFile(event.target.files?.[0] ?? null);
+          void ingestFile(Array.from(event.target.files ?? []));
           event.target.value = '';
         }}
       />
@@ -127,9 +171,16 @@ export function UploadZone({
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
       >
-        <UploadCloudIcon className="size-6 text-muted-foreground" aria-hidden="true" />
+        {busy ? (
+          <LoaderCircleIcon className="size-6 animate-spin" aria-hidden="true" />
+        ) : (
+          <UploadCloudIcon className="size-6 text-muted-foreground" aria-hidden="true" />
+        )}
         <span className="text-[length:var(--text-label)] font-medium text-muted-foreground">
-          {t('clone.drop_audio')}
+          {t(busy ? 'common.loading' : 'clone.drop_audio')}
+        </span>
+        <span className="text-xs text-muted-foreground" role="status">
+          {t('clone.auto_merge_hint')}
         </span>
       </label>
     </div>
@@ -141,7 +192,7 @@ export function RecordZone({
   pickToken,
 }: { onAccept?: AcceptReference; pickToken?: PickToken } = {}) {
   const { t } = useTranslation();
-  const ingestFile = useIngest(onAccept, pickToken);
+  const { ingestFile } = useIngest(onAccept, pickToken);
   const rec = useRecording((file) => void ingestFile(file));
   const hasSignal = rec.level >= LEVEL_THRESHOLD;
   let micButton;

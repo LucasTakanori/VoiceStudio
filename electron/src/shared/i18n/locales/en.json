@@ -331,6 +331,7 @@
     "convert_desc": "Say it once — hear it in another voice. Speech to speech, fully local."
   },
   "clone": {
+    "auto_merge_hint": "Select or drop up to 20 clips from the same speaker. Multiple clips are automatically merged in selection order.",
     "text_label": "Text",
     "paste": "Paste",
     "paste_failed": "Clipboard access was blocked. Paste directly into the text field using your keyboard.",

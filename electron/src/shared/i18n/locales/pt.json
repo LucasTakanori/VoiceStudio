@@ -567,6 +567,7 @@
     "convert_desc": "Diga uma vez — ouça em outra voz. Fala para fala, totalmente local."
   },
   "clone": {
+    "auto_merge_hint": "Selecione ou arraste até 20 clipes da mesma pessoa. Os clipes são unidos automaticamente na ordem de seleção.",
     "text_label": "Texto",
     "paste": "Colar",
     "paste_failed": "O acesso à área de transferência foi bloqueado. Cole diretamente no campo de texto usando o teclado.",

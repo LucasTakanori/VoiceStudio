@@ -28,6 +28,25 @@ afterEach(() => {
 });
 
 describe('setReferenceFile', () => {
+  it('keeps the old reference when a newer merge starts during the duration probe', async () => {
+    probeAudioDuration.mockResolvedValue(4);
+    const original = file('kept.wav');
+    await setReferenceFile(original);
+    let finish!: (seconds: number) => void;
+    probeAudioDuration.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    let current = true;
+    const pending = setReferenceFile(file('superseded.wav'), () => current);
+    current = false;
+    finish(5);
+    await pending;
+    expect(referenceStore.state.file).toBe(original);
+    expect(referenceStore.state.pending).toBeUndefined();
+  });
   it('accepts a short clip and deselects the saved voice', async () => {
     setCloneSetting('selectedProfileId', 'p1');
     setCloneSetting('language', 'French');

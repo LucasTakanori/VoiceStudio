@@ -342,6 +342,7 @@
     "working": "Elaborazione…"
   },
   "clone": {
+    "auto_merge_hint": "Seleziona o trascina fino a 20 clip della stessa persona. Le clip vengono unite automaticamente nell’ordine di selezione.",
     "text_label": "Testo",
     "paste": "Incolla",
     "paste_failed": "L’accesso agli appunti è bloccato. Incolla direttamente nel campo di testo con la tastiera.",

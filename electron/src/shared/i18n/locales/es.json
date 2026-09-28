@@ -567,6 +567,7 @@
     "convert_desc": "Dilo una vez y escúchalo con otra voz. De voz a voz, totalmente local."
   },
   "clone": {
+    "auto_merge_hint": "Selecciona o arrastra hasta 20 clips de la misma persona. Los clips se unen automáticamente en el orden de selección.",
     "text_label": "Texto",
     "paste": "Pegar",
     "paste_failed": "Se bloqueó el acceso al portapapeles. Pega directamente en el campo de texto con el teclado.",

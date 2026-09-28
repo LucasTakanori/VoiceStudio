@@ -567,6 +567,7 @@
     "convert_desc": "Dites-le une fois — écoutez-le avec une autre voix. De la parole à la parole, entièrement en local."
   },
   "clone": {
+    "auto_merge_hint": "Sélectionnez ou déposez jusqu’à 20 extraits de la même personne. Ils sont fusionnés automatiquement dans l’ordre de sélection.",
     "text_label": "Texte",
     "paste": "Coller",
     "paste_failed": "L’accès au presse-papiers est bloqué. Collez directement dans le champ de texte avec le clavier.",

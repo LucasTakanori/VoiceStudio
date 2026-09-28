@@ -67,7 +67,10 @@ export function selectCloneProfile(
  * the engine keeps as much of them as it can use (#2281). Picking a file
  * deselects any saved voice — exactly one of the two feeds `/generate`.
  */
-export async function setReferenceFile(file: File | null): Promise<SetReferenceResult> {
+export async function setReferenceFile(
+  file: File | null,
+  isCurrent: () => boolean = () => true,
+): Promise<SetReferenceResult> {
   const pick = ++latestPick;
   if (!file) {
     replaceState(EMPTY);
@@ -80,7 +83,7 @@ export async function setReferenceFile(file: File | null): Promise<SetReferenceR
   } finally {
     if (pick === latestPick) referenceStore.setState(({ pending: _pending, ...state }) => state);
   }
-  const superseded = pick !== latestPick;
+  const superseded = pick !== latestPick || !isCurrent();
   if (durationSeconds !== null && durationSeconds > REF_HARD_MAX_SECONDS) {
     return { ok: false, durationSeconds, tooLong: true };
   }

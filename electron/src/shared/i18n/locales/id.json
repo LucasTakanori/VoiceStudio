@@ -567,6 +567,7 @@
     "convert_desc": "Ucapkan sekali — dengar dengan suara lain. Ucapan ke ucapan, sepenuhnya lokal."
   },
   "clone": {
+    "auto_merge_hint": "Pilih atau jatuhkan hingga 20 klip dari pembicara yang sama. Beberapa klip otomatis digabung sesuai urutan pemilihan.",
     "text_label": "Teks",
     "paste": "Tempel",
     "paste_failed": "Akses papan klip diblokir. Tempel langsung ke kolom teks menggunakan papan ketik.",

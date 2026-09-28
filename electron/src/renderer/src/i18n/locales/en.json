@@ -239,6 +239,7 @@
     "argosRuntimeUnavailable": "Argos runtime unavailable. Reinstall the backend or select NLLB."
   },
   "clone": {
+    "auto_merge_hint": "Select or drop up to 20 clips from the same speaker. Multiple clips are automatically merged in selection order.",
     "title": "Voice cloning",
     "text_label": "Script",
     "paste": "Paste",

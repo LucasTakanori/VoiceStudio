@@ -567,6 +567,7 @@
     "convert_desc": "Bir kez söyleyin — başka bir sesle duyun. Konuşmadan konuşmaya, tamamen yerel."
   },
   "clone": {
+    "auto_merge_hint": "Aynı konuşmacıya ait en fazla 20 klip seçin veya sürükleyip bırakın. Birden fazla klip seçim sırasına göre otomatik birleştirilir.",
     "text_label": "Metin",
     "paste": "Yapıştır",
     "paste_failed": "Pano erişimi engellendi. Klavyeyi kullanarak doğrudan metin alanına yapıştırın.",

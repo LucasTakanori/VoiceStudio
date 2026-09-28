@@ -340,6 +340,7 @@
     "working": "Bearbetar…"
   },
   "clone": {
+    "auto_merge_hint": "Välj eller släpp upp till 20 klipp från samma talare. Flera klipp slås automatiskt ihop i den ordning de valts.",
     "text_label": "Text",
     "paste": "Klistra in",
     "paste_failed": "Åtkomst till urklipp blockerades. Klistra in direkt i textfältet med tangentbordet.",

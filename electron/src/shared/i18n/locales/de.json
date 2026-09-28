@@ -567,6 +567,7 @@
     "convert_desc": "Einmal sagen — in einer anderen Stimme hören. Sprache zu Sprache, komplett lokal."
   },
   "clone": {
+    "auto_merge_hint": "Wähle bis zu 20 Clips derselben Person aus oder ziehe sie hierher. Mehrere Clips werden automatisch in Auswahlreihenfolge zusammengefügt.",
     "text_label": "Text",
     "paste": "Einfügen",
     "paste_failed": "Der Zugriff auf die Zwischenablage wurde blockiert. Füge den Inhalt mit der Tastatur direkt ins Textfeld ein.",
