@@ -36,6 +36,11 @@ metadata and the backend fallback mirror it.
 
 ### Changed
 
+- OmniVoice sidecars reuse installed speech recognition for short references without transcripts, matching in-process cloning (#2320)
+- Electron recovers from OS-denied default backend ports without changing explicitly configured ports (#2358) — thanks @rishi2288!
+- Home opens directly on project actions, and Integrations lists only connectors with completed in-app setup (#2351)
+- Multi-GPU NVIDIA hosts can choose which physical CUDA adapter VoiceStudio and its engine subprocesses use (#2346) — thanks @z0tedd!
+- MCP clients on another machine can connect through PIN-gated Local network sharing, which admits LAN hosts only while sharing is enabled (#2347) — thanks @z0tedd!
 - Docker, web setup, and documentation now use the canonical `ghcr.io/debpalash/voicestudio` image while the old GHCR path remains compatible (#2350)
 - GHCR publishes the VoiceStudio container coordinate alongside the existing path, with a release-tag backfill for a safe migration (#2348)
 - Electron is now the only desktop and web UI, with native helpers, packaging, setup, Docker and Network Sharing owned by maintained Electron paths (#2343)
@@ -53,6 +58,10 @@ metadata and the backend fallback mirror it.
 
 ### Fixed
 
+- macOS development launches use the maintained Electron version and icon paths (#2351)
+- Electron detects and repairs incomplete PyTorch, torchaudio and torchvision runtime wheels before backend startup (#2354) — thanks @jonathanmoronta1-lab!
+- Returning to local mode discards sessions from unsaved remote-backend connection tests (#2356)
+- Remote administrator sessions survive reloads and new tabs without storing the master API key (#2352) — thanks @brunobarrientos!
 - Dub extraction shows ffmpeg's actual error instead of its Homebrew version banner (#2353) — thanks @lyrenth!
 - Main-source installs use the built app version even when platform tooling has its own `Version` variable (#2343)
 - The macOS application menu says VoiceStudio instead of Electron in development launches (#2342)

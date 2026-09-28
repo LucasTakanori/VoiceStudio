@@ -32,6 +32,15 @@ export const ROCM_TORCH_PINS = [
   'torchaudio==2.8.0',
   'torchvision==0.23.0',
 ] as const;
+export const RUNTIME_REPAIR_PACKAGES = [
+  'torch',
+  'torchaudio',
+  'torchvision',
+] as const;
+export const RUNTIME_NATIVE_IMPORT_PROBE =
+  'import torch, torchaudio, torchvision';
+export const RUNTIME_IMPORT_PROBE =
+  'import fastapi, uvicorn, omnivoice, faster_whisper, sentencepiece, torch, torchaudio, torchvision';
 const RUNTIME_SCHEMA = 'electron-runtime-v2-cudnn8';
 const CUDNN8_PROBE_PREFIX = 'VOICESTUDIO_CUDNN8_PROBE=';
 const REQUIRED_ENV_BYTES = 9 * 1024 ** 3;
@@ -278,7 +287,7 @@ export async function runtimeDependenciesReady(project: string): Promise<boolean
   return new Promise((resolve) => {
     execFile(
       runtimePython(project),
-      ['-c', 'import fastapi, uvicorn, omnivoice, faster_whisper, sentencepiece'],
+      ['-c', RUNTIME_IMPORT_PROBE],
       {
         cwd: project,
         windowsHide: true,
@@ -450,14 +459,36 @@ export async function installRuntime(
     () => false,
   );
   let existingPython = false;
+  const repairPackages: string[] = [];
   if (interpreterExists) {
     try {
       await run(
         runtimePython(project),
-        ['-c', 'import sys, sentencepiece; assert sys.version_info[:2] == (3, 11)'],
+        ['-c', 'import sys; assert sys.version_info[:2] == (3, 11)'],
         project,
       );
       existingPython = true;
+      try {
+        await run(runtimePython(project), ['-c', RUNTIME_IMPORT_PROBE], project);
+      } catch {
+        // Classify the failed full probe before evicting multi-GB native wheels.
+        // A missing FastAPI/uvicorn install is repaired by ordinary frozen sync
+        // and must retain the app-private wheel cache for offline recovery.
+        try {
+          await run(runtimePython(project), ['-c', RUNTIME_NATIVE_IMPORT_PROBE], project);
+        } catch {
+          // A native wheel can be missing or ABI-broken while its dist-info
+          // still convinces uv sync that it is installed. Reinstall only then.
+          repairPackages.push(...RUNTIME_REPAIR_PACKAGES);
+        }
+        // Sentencepiece has its own native wheel, independent of PyTorch.
+        signal.throwIfAborted();
+        try {
+          await run(runtimePython(project), ['-c', 'import sentencepiece'], project);
+        } catch {
+          repairPackages.push('sentencepiece');
+        }
+      }
     } catch {
       // Retry must not keep a wrong-base or native-crashing interpreter simply
       // because its executable survived interrupted setup. uv selects the managed
@@ -470,14 +501,13 @@ export async function installRuntime(
     : ['--managed-python', '--python', '3.11'];
   // A failed native import may leave distribution metadata intact, so uv's
   // ordinary sync would otherwise consider the broken wheel already satisfied.
-  const repairArgs =
-    interpreterExists && !existingPython ? ['--reinstall-package', 'sentencepiece'] : [];
+  const repairArgs = repairPackages.flatMap((name) => ['--reinstall-package', name]);
   signal.throwIfAborted();
   if (repairArgs.length) {
     // uv may hardlink installed files to its unpacked wheel cache. A corrupted
     // native file can therefore poison the cached copy too; evict only this
     // package from the app-private cache before reinstalling its locked wheel.
-    await run(uv, ['cache', 'clean', 'sentencepiece'], project, env);
+    await run(uv, ['cache', 'clean', ...repairPackages], project, env);
     signal.throwIfAborted();
   }
   await run(uv, ['sync', '--frozen', '--no-dev', ...pythonArgs, ...repairArgs], project, env);
@@ -503,11 +533,7 @@ export async function installRuntime(
   await ensureCudnn8Compat(uv, project, run, env, signal);
   signal.throwIfAborted();
   phase('verifying');
-  await run(
-    runtimePython(project),
-    ['-c', 'import fastapi, uvicorn, omnivoice, faster_whisper, sentencepiece'],
-    project,
-  );
+  await run(runtimePython(project), ['-c', RUNTIME_IMPORT_PROBE], project);
   signal.throwIfAborted();
   await writeFile(join(project, '.runtime-ready'), await dependencyStamp(bundle));
   await rm(join(project, '.runtime-installing'), { force: true });

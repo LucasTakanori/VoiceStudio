@@ -22,11 +22,11 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
 import subprocess
 from typing import Optional
 
 from worker.capacity import derive_concurrency
+from core.nvidia_smi import find_nvidia_smi
 
 logger = logging.getLogger("omnivoice.worker")
 
@@ -56,9 +56,7 @@ def _accelerator_memory_bytes(caps) -> tuple[int, int]:
 
 
 def _nvidia_driver_version() -> str:
-    executable = shutil.which("nvidia-smi")
-    if not executable and os.path.isfile("/usr/lib/wsl/lib/nvidia-smi"):
-        executable = "/usr/lib/wsl/lib/nvidia-smi"
+    executable = find_nvidia_smi()
     try:
         result = subprocess.run(
             [

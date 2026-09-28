@@ -2100,6 +2100,7 @@
     "test_text": "Witamy — to jest test tego głosu."
   },
   "nav": {
+    "home": "Strona główna",
     "voice": "Głos",
     "clone_short": "Klonuj",
     "workspaces": "Obszary robocze",

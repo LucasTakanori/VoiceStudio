@@ -58,6 +58,7 @@ def test_main_mounts_mcp_route(monkeypatch):
     import main as _main
     importlib.reload(_main)
     assert "/mcp" in _mount_paths(_main.app)
+    assert _main.app.state.mcp_transport_security is not None
 
 
 def test_mcp_disable_env_skips_mount(monkeypatch):

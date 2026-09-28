@@ -32,6 +32,7 @@ GET /api/settings/analytics
 GET /api/settings/asr-openai-compat
 GET /api/settings/changelog
 GET /api/settings/compute-device
+GET /api/settings/cuda-device
 GET /api/settings/db-backup
 GET /api/settings/dictation-refinement
 GET /api/settings/hf-mirror
@@ -290,6 +291,7 @@ POST /system/tailscale/enable
 POST /tasks/cancel/{task_id}
 POST /tools/direction
 POST /tools/incremental
+POST /tools/merge-audio
 POST /tools/normalize-speech
 POST /tools/probe
 POST /tools/rate-fit
@@ -318,6 +320,7 @@ PUT /api/mcp/bindings
 PUT /api/settings/analytics
 PUT /api/settings/asr-openai-compat
 PUT /api/settings/compute-device
+PUT /api/settings/cuda-device
 PUT /api/settings/dictation-refinement
 PUT /api/settings/hf-mirror
 PUT /api/settings/history-retention

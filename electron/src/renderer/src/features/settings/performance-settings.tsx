@@ -20,6 +20,8 @@ import { apiJson, describeError } from '@/lib/api/client';
 import { useAppActivities } from '@/lib/app-activity';
 import { SettingsSection, SettingsRow } from './settings-layout';
 import { useSettingsAction } from './use-settings-action';
+// @ts-expect-error shared JSX component has no declaration file
+import SearchableSelect from '@shared/components/SearchableSelect';
 interface DeviceState {
   value: string;
   applied: string;
@@ -28,6 +30,13 @@ interface DeviceState {
   env_pinned: boolean;
   override_ignored: boolean;
   restart_required: boolean;
+}
+interface CudaDeviceState {
+  value: string;
+  applied: string;
+  env_pinned: boolean;
+  restart_required: boolean;
+  devices: Array<{ index: number; value: string; name: string }>;
 }
 interface SystemInfo {
   platform: string;
@@ -401,11 +410,17 @@ function ComputeDevice() {
   const { t } = useTranslation();
   const client = useQueryClient();
   const action = useSettingsAction();
+  const cudaAction = useSettingsAction();
   const query = useQuery({
     queryKey: ['compute-device'],
     queryFn: ({ signal }) => apiJson<DeviceState>('/api/settings/compute-device', { signal }),
   });
   const state = query.data;
+  const cudaQuery = useQuery({
+    queryKey: ['cuda-device'],
+    queryFn: ({ signal }) => apiJson<CudaDeviceState>('/api/settings/cuda-device', { signal }),
+  });
+  const cuda = cudaQuery.data;
   const choose = (value: string) =>
     action.run(async () => {
       const saved = await apiJson<DeviceState>('/api/settings/compute-device', {
@@ -441,6 +456,41 @@ function ComputeDevice() {
           {state ? t('settings.device_family_' + state.effective_family) : t('common.loading')}
         </span>
       </SettingsRow>
+      {((cuda?.devices.length || 0) > 1 || cuda?.value !== 'auto') && (
+        <SettingsRow
+          id="cuda-device"
+          title={t('settings.device_family_cuda')}
+          description={t('settings.compute_device_restart')}
+        >
+          <div className="w-72 max-w-full">
+            <SearchableSelect
+              value={cuda?.value || 'auto'}
+              options={[
+                { value: 'auto', label: t('settings.compute_device_auto') },
+                ...(cuda?.value === 'disabled'
+                  ? [{ value: 'disabled', label: t('supportPlans.disabled') }]
+                  : []),
+                ...(cuda?.devices || []).map((device) => ({
+                  value: device.value,
+                  label: `${t('settings.device_family_gpu')} ${device.index} — ${device.name}`,
+                })),
+              ]}
+              onChange={(value: string) =>
+                void cudaAction.run(async () => {
+                  const saved = await apiJson<CudaDeviceState>('/api/settings/cuda-device', {
+                    method: 'PUT',
+                    body: JSON.stringify({ value }),
+                  });
+                  client.setQueryData(['cuda-device'], saved);
+                })
+              }
+              disabled={!cuda || cuda.env_pinned || cudaAction.busy}
+              ariaLabel={t('settings.device_family_cuda')}
+              menuPortal
+            />
+          </div>
+        </SettingsRow>
+      )}
       {state?.env_pinned && (
         <p className="p-4 text-sm text-muted-foreground">
           {t('settings.compute_device_env_pinned')}
@@ -454,7 +504,34 @@ function ComputeDevice() {
           {t('settings.compute_device_restart')}
         </p>
       )}
-      {(action.error || query.isError) && <ErrorRow retry={() => void query.refetch()} />}
+      {cuda?.env_pinned && (
+        <p className="p-4 text-sm text-muted-foreground">
+          {t('settings.generate_timeout_shadowed_note')}
+        </p>
+      )}
+      {cuda?.restart_required && (
+        <p role="status" className="p-4 text-sm text-muted-foreground">
+          {t('settings.compute_device_restart')}
+        </p>
+      )}
+      {(action.error || query.isError || cudaAction.error || cudaQuery.isError) && (
+        <ErrorRow
+          retry={() => {
+            void Promise.all([
+              query.refetch({ throwOnError: true }),
+              cudaQuery.refetch({ throwOnError: true }),
+            ]).then(
+              () => {
+                action.clearError();
+                cudaAction.clearError();
+              },
+              () => {
+                // Preserve the action error until both settings reload successfully.
+              },
+            );
+          }}
+        />
+      )}
     </SettingsSection>
   );
 }

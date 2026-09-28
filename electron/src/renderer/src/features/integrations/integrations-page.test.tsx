@@ -12,12 +12,34 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
 });
-it('keeps integrations with a shared vendor URL distinct while filtering', async () => {
+it('only lists integrations with completed wiring pages', () => {
+  const { container } = render(<IntegrationsPage />);
+  const names = [...container.querySelectorAll('.integration-card h3')].map(
+    (heading) => heading.textContent,
+  );
+  expect(names.sort()).toEqual([
+    'Claude Code',
+    'Codex CLI',
+    'Cursor',
+    'Docker',
+    'GitHub Container Registry',
+    'Model Context Protocol',
+    'OpenAI Agents',
+    'Twilio',
+    'VoiceStudio API',
+    'n8n',
+  ]);
+  expect(container.textContent).not.toContain('Zapier');
+  expect(container.textContent).not.toContain('integrationCatalog.externalLink');
+  expect(container.querySelector('.integrations-featured')).toBeNull();
+});
+
+it('keeps wired integrations distinct while filtering', async () => {
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const { container } = render(<IntegrationsPage />);
   const originalCount = container.querySelectorAll('.integration-card').length;
   fireEvent.change(screen.getByRole('textbox', { name: 'common.search' }), {
-    target: { value: 'modelcontextprotocol/servers' },
+    target: { value: 'mcp' },
   });
   const cards = [...container.querySelectorAll<HTMLButtonElement>('.integration-card')];
   expect(cards.length).toBeGreaterThan(1);
@@ -34,7 +56,7 @@ it('keeps integrations with a shared vendor URL distinct while filtering', async
   expect(errors).not.toHaveBeenCalled();
 });
 
-it('badges only entries with a real setup block as working with VoiceStudio', () => {
+it('badges every listed integration as working with VoiceStudio', () => {
   const { container } = render(<IntegrationsPage />);
   const card = (name: string) =>
     [...container.querySelectorAll('.integration-card')].find(
@@ -42,7 +64,7 @@ it('badges only entries with a real setup block as working with VoiceStudio', ()
     )!;
   expect(card('Codex CLI')).toHaveTextContent('integrationCatalog.worksWith');
   expect(card('Codex CLI')).toHaveTextContent('integrationCatalog.capability.mcp');
-  expect(card('Zapier')).toHaveTextContent('integrationCatalog.externalLink');
-  expect(card('Zapier').querySelector('.integration-card-capabilities')).toBeNull();
+  expect(card('Twilio')).toHaveTextContent('integrationCatalog.worksWith');
+  expect(card('Twilio')).toHaveTextContent('integrationCatalog.capability.phoneCalls');
   expect(container.textContent).not.toContain('directoryExamples.example');
 });

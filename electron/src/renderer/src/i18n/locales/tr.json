@@ -2096,6 +2096,7 @@
     "test_text": "Merhaba — bu, bu sesin bir testidir."
   },
   "nav": {
+    "home": "Ana sayfa",
     "voice": "Ses",
     "clone_short": "Klonla",
     "workspaces": "Çalışma alanları",

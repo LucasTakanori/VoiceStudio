@@ -23,8 +23,8 @@ process-bound admin session:
 - Direct API clients keep using `Authorization: Bearer <OMNIVOICE_API_KEY>`.
 - The browser/Tauri UI presents the master key once to create an admin session.
 - Same-origin browsers receive an `HttpOnly` session cookie.
-- Cross-origin/Tauri clients retain only the short-lived session in
-  `sessionStorage`.
+- Cross-origin/Electron clients retain only the backend-bound, short-lived
+  session in `localStorage` so reloads and new tabs remain authenticated.
 - Cross-origin WebSockets use a path-bound, single-use ticket with a 30-second
   lifetime. The master key and admin session token never enter a URL.
 - Session authorization grants consumption and admin capabilities, but never
@@ -402,8 +402,8 @@ Responsibilities:
   request. Do not route the exchange through `apiFetch`; retry/reload logic must
   never replay a master credential implicitly.
 - Use `credentials: "include"` for cookie sessions.
-- Keep bearer sessions only in `sessionStorage` and clear them on logout,
-  expiry, backend change, or API-key rotation response.
+- Keep only bearer sessions in `localStorage` and clear them on logout, expiry,
+  backend change, or API-key rotation response.
 - Fetch WebSocket tickets for cross-origin/Tauri sessions.
 - Redact credentials from all thrown errors and diagnostics.
 
@@ -663,7 +663,7 @@ Backend tests in `tests/test_capture_ws.py` plus equivalent coverage for
 - Exchanges the master exactly once and never retries automatically.
 - Uses cookie transport for same-origin browser execution.
 - Uses bearer-session transport for explicit cross-origin/Tauri execution.
-- Writes only the short-lived bearer session to `sessionStorage`.
+- Writes only the backend-bound, short-lived bearer session to `localStorage`.
 - Never writes the master to any storage API.
 - Clears session state on logout, expiry, backend base-URL change, and rotation
   failure.

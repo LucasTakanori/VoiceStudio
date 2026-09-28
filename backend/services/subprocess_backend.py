@@ -1081,10 +1081,10 @@ class SubprocessBackend(TTSBackend):
     ) -> None:
         """Pump sidecar stderr lines into the parent logger.
 
-        Prefixes each line with `[<engine_id>]`. The HFTokenRedactor filter
-        installed at the root logger in Phase 1 redacts any token bytes
-        that slip through. See T-02-03.
+        Scrub home paths and secrets before either logging or buffering, then
+        prefix each line with `[<engine_id>]`.
         """
+        from core.scrub import scrub_text
         # Bound at spawn: a drain thread that starts late must still read
         # its own process, never a replacement published since (#2026).
         if proc is None:
@@ -1097,12 +1097,13 @@ class SubprocessBackend(TTSBackend):
                     line = raw.decode("utf-8", errors="replace").rstrip()
                 except Exception:
                     line = repr(raw)
+                line = scrub_text(line)
                 if line:
                     logger.info("[%s] %s", self.id, line)
                     if tail is not None:
                         tail.append(line)
         except Exception as exc:
-            logger.debug("[%s] stderr drain ended: %s", self.id, exc)
+            logger.debug("[%s] stderr drain ended: %s", self.id, scrub_text(str(exc)))
 
 
 # ── helpers ────────────────────────────────────────────────────────────────

@@ -116,6 +116,46 @@ def _use_stub(monkeypatch, stub_path):
     )
 
 
+def test_reference_asr_hang_is_killed_and_next_request_recovers(monkeypatch, tmp_path):
+    """Run the actual child dispatcher with a wedged native-ASR stand-in."""
+    from engines.omnivoice_subprocess import main as sidecar
+    from services import asr_backend, tts_backend
+
+    marker = tmp_path / "entered-asr"
+    script = tmp_path / "reference_child.py"
+    script.write_text(
+        "import importlib.util, sys, time, types\n"
+        f"spec = importlib.util.spec_from_file_location('child', {str(Path(sidecar.__file__).resolve())!r})\n"
+        "child = importlib.util.module_from_spec(spec); spec.loader.exec_module(child)\n"
+        "def transcribe(path, *, release_after=False):\n"
+        "    if path == 'hang.wav':\n"
+        f"        open({str(marker)!r}, 'w').write('entered')\n"
+        "        while True: time.sleep(0.1)\n"
+        "    return 'Reference words.'\n"
+        "sys.modules['omnivoice.utils.audio'] = types.SimpleNamespace(CLONE_REF_TEXT_MAX_SECONDS=20)\n"
+        "sys.modules['services.tts_backend'] = types.SimpleNamespace(reference_duration_s=lambda _: 1)\n"
+        "sys.modules['services.asr_backend'] = types.SimpleNamespace(transcribe_reference=transcribe)\n"
+        "child._load_model = lambda _: types.SimpleNamespace(generate=lambda **kw: [None], sampling_rate=24000)\n"
+        "child._tensor_to_pcm_b64 = lambda *_: ('AAA=', 24000, 1)\n"
+        "sys.exit(child.main())\n"
+    )
+    _use_stub(monkeypatch, script)
+    monkeypatch.setattr(tts_backend, "reference_duration_s", lambda _: 1)
+    def forbidden_parent_asr(_path):
+        pytest.fail("ASR ran in the API process outside the killable child")
+    monkeypatch.setattr(asr_backend, "transcribe_reference", forbidden_parent_asr)
+    monkeypatch.setattr(OmniVoiceSubprocessBackend, "recv_timeout_s", property(lambda _: 1.0))
+    backend = OmniVoiceSubprocessBackend()
+    try:
+        with pytest.raises(RuntimeError, match="sidecar sent nothing"):
+            backend.generate("hello", ref_audio="hang.wav")
+        assert marker.exists(), "test must reach ASR before timing out"
+        assert backend._proc is None or backend._proc.poll() is not None
+        assert backend.generate("hello", ref_audio="okay.wav").shape[-1] == 1
+    finally:
+        backend.shutdown()
+
+
 # ── registry + isolation ───────────────────────────────────────────────────
 
 

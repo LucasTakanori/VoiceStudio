@@ -2096,6 +2096,7 @@
     "test_text": "안녕하세요. 이 목소리에 대한 테스트입니다."
   },
   "nav": {
+    "home": "홈",
     "voice": "음성",
     "clone_short": "복제",
     "workspaces": "작업 공간",

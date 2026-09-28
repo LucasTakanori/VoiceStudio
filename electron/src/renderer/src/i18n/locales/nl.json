@@ -2096,6 +2096,7 @@
     "test_text": "Hallo – dit is een test van deze stem."
   },
   "nav": {
+    "home": "Start",
     "voice": "Stem",
     "clone_short": "Klonen",
     "workspaces": "Werkruimtes",

@@ -1389,6 +1389,23 @@ class MLXWhisperBackend(ASRBackend):
             logger.warning("MLX Whisper warmup failed after %.1fs: %s", dt, e)
 
 
+    def unload(self) -> None:
+        # mlx-whisper owns the weights in a library-level singleton, not on
+        # this wrapper. Dropping the wrapper alone retains unified memory.
+        import sys
+        module = sys.modules.get("mlx_whisper.transcribe")
+        holder = getattr(module, "ModelHolder", None)
+        if holder is None:
+            return
+        holder.model = None
+        holder.model_path = None
+        import gc
+        gc.collect()
+        mx = sys.modules.get("mlx.core")
+        if mx is not None:
+            mx.clear_cache()
+
+
 # ── PyTorch Whisper fallback (CUDA / CPU via pipeline) ─────────────────────
 
 
@@ -3036,7 +3053,9 @@ class ASRModelMissingError(RuntimeError):
         super().__init__(asr_model_missing_detail(payload))
 
 
-def load_active_asr_backend(*, asr_pipe=None, require_installed: bool = False) -> ASRBackend:
+def load_active_asr_backend(
+    *, asr_pipe=None, require_installed: bool = False, defer_pytorch: bool = False,
+) -> ASRBackend:
     """:func:`get_active_asr_backend` + eager ``ensure_loaded()``, degrading
     past backends whose deep import chain is broken (#1185).
 
@@ -3059,11 +3078,16 @@ def load_active_asr_backend(*, asr_pipe=None, require_installed: bool = False) -
     primary would let the fallback silently auto-download multi-GB weights.
     A fallback without installed weights raises :class:`ASRModelMissingError`
     (typed payload → the caller's download CTA).
+    Reference transcription uses ``defer_pytorch`` to leave that pipeline to
+    the TTS model's installed-only fallback, without eagerly loading a second
+    copy that the reference caller would immediately discard.
     """
     from core.scrub import scrub_text
     tried: set[str] = set()
     while True:
         backend = get_active_asr_backend(asr_pipe=asr_pipe)
+        if defer_pytorch and isinstance(backend, PyTorchWhisperBackend):
+            return backend
         bid = getattr(backend, "id", "?")
         if tried or require_installed:
             # Preflight the SPECIFIC candidate about to load — not the global
@@ -3224,7 +3248,26 @@ def _installed_reference_fallbacks(
 
 
 def _transcribe_reference_candidates(
-    candidates: list[ASRBackend], audio_path: str,
+    candidates: list[ASRBackend], audio_path: str, *, release_after: bool = False,
+) -> str:
+    # Sidecars serialize ASR and TTS; release even preloaded candidates skipped
+    # after the first success before loading the much larger synthesis model.
+    with contextlib.ExitStack() as releases:
+        if release_after:
+            for backend in candidates:
+                releases.callback(_release_reference_backend, backend)
+        return _try_reference_candidates(candidates, audio_path, release_after=release_after)
+
+
+def _release_reference_backend(backend: ASRBackend) -> None:
+    try:
+        backend.unload()
+    except Exception:  # noqa: BLE001 - release is best-effort
+        logger.warning("reference ASR fallback unload failed")
+
+
+def _try_reference_candidates(
+    candidates: list[ASRBackend], audio_path: str, *, release_after: bool,
 ) -> str:
     for backend in candidates:
         try:
@@ -3236,18 +3279,15 @@ def _transcribe_reference_candidates(
             candidate_text = (candidate_text or "").strip()
             if candidate_text:
                 return candidate_text
-        except Exception as exc:  # noqa: BLE001 - try the next local engine
-            logger.warning("transcribe_reference: %s failed (%s)", backend.id, exc)
+        except Exception:  # noqa: BLE001 - try the next local engine
+            logger.warning("transcribe_reference: %s failed", backend.id)
         finally:
-            if getattr(backend, "_reference_ephemeral", False):
-                try:
-                    backend.unload()
-                except Exception:  # noqa: BLE001 - release is best-effort
-                    logger.warning("reference ASR fallback unload failed", exc_info=True)
+            if not release_after and getattr(backend, "_reference_ephemeral", False):
+                _release_reference_backend(backend)
     return ""
 
 
-def transcribe_reference(audio_path: str) -> str | None:
+def transcribe_reference(audio_path: str, *, release_after: bool = False) -> str | None:
     """Transcribe a voice-clone reference clip with the active ASR backend.
 
     Voice cloning without a user-supplied transcript used to fall through to
@@ -3260,6 +3300,8 @@ def transcribe_reference(audio_path: str) -> str | None:
     through and the model's installed-only fallback still gets its chance.
 
     Results are cached by audio content (#1032) — see the cache notes above.
+    ``release_after`` is for serialized sidecar use only: unload all selected
+    ASR weights before TTS loads, without evicting the API's shared live ASR.
     """
     fingerprint = _ref_audio_fingerprint(audio_path)
     if fingerprint is not None:
@@ -3276,18 +3318,23 @@ def transcribe_reference(audio_path: str) -> str | None:
     # introduced spurious words at the start of short generations. Neither
     # branch may download weights implicitly.
     candidates: list[ASRBackend] = []
-    offline_missing = asr_model_missing_error()
+    # This provider is only reachable through an explicit settings/env choice;
+    # it has no local weights to verify and must keep the user's opt-in working.
+    selected_remote = active_backend_id() == "openai-compat-asr"
+    offline_missing = asr_model_missing_error(require_installed=not selected_remote)
     if offline_missing is None:
         try:
             # `load_*`, not `get_*`: a backend whose shallow probe passes but
             # whose deep import chain is broken must fall through cleanly.
-            backend = load_active_asr_backend()
+            backend = load_active_asr_backend(
+                require_installed=not selected_remote, defer_pytorch=True,
+            )
             if not isinstance(backend, PyTorchWhisperBackend):
                 candidates.append(backend)
-        except Exception as e:  # noqa: BLE001 — reference ASR is best-effort
-            logger.warning("transcribe_reference: offline ASR unavailable (%s)", e)
+        except Exception:  # noqa: BLE001 — reference ASR is best-effort
+            logger.warning("transcribe_reference: offline ASR unavailable")
 
-    capture_missing = asr_model_missing_error(purpose="dictation")
+    capture_missing = asr_model_missing_error(purpose="dictation", require_installed=True)
     if capture_missing is None:
         try:
             capture = get_capture_asr_backend()
@@ -3296,14 +3343,14 @@ def transcribe_reference(audio_path: str) -> str | None:
                 for item in candidates
             ):
                 candidates.append(capture)
-        except Exception as e:  # noqa: BLE001 — reference ASR is best-effort
-            logger.warning("transcribe_reference: dictation ASR unavailable (%s)", e)
+        except Exception:  # noqa: BLE001 — reference ASR is best-effort
+            logger.warning("transcribe_reference: dictation ASR unavailable")
 
-    text = _transcribe_reference_candidates(candidates, audio_path)
+    text = _transcribe_reference_candidates(candidates, audio_path, release_after=release_after)
     fallbacks: list[ASRBackend] = []
     if not text:
         fallbacks = _installed_reference_fallbacks(candidates)
-        text = _transcribe_reference_candidates(fallbacks, audio_path)
+        text = _transcribe_reference_candidates(fallbacks, audio_path, release_after=release_after)
 
     if not candidates and not fallbacks:
         logger.info(

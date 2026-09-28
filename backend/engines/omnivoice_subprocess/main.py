@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import struct
 import sys
@@ -209,10 +210,26 @@ def _handle_synthesize(msg: dict, stdout) -> None:
     if not text or not isinstance(text, str):
         raise ValueError("synthesize: missing or non-string 'text'")
 
-    model = _load_model(stdout)
-
     ref_audio = msg.get("ref_audio") or None
     ref_text = msg.get("ref_text") or None
+    if isinstance(ref_audio, str) and not (ref_text or "").strip():
+        # Keep native ASR inside the same killable process and synthesize
+        # deadline as TTS, rather than holding the API's GPU worker forever.
+        _ensure_backend_on_path()
+        from omnivoice.utils.audio import CLONE_REF_TEXT_MAX_SECONDS
+        from services.tts_backend import reference_duration_s
+
+        duration = reference_duration_s(ref_audio)
+        if duration is None or duration <= CLONE_REF_TEXT_MAX_SECONDS:
+            from services.asr_backend import transcribe_reference
+
+            ref_text = None
+            try:
+                ref_text = transcribe_reference(ref_audio, release_after=True)
+            except Exception:  # noqa: BLE001 — preserve installed-only model fallback
+                logging.getLogger(__name__).warning("reference transcript resolution failed")
+
+    model = _load_model(stdout)
     gen_kw = {k: msg[k] for k in _GEN_KW_ALLOWLIST if k in msg}
 
     seed = msg.get("seed")

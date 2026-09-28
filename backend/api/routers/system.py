@@ -21,6 +21,7 @@ import shlex
 from core.config import OUTPUTS_DIR, DATA_DIR, CRASH_LOG_PATH, LOG_PATH, IDLE_TIMEOUT_SECONDS
 from core.version import APP_VERSION
 from core.logging_utils import log_safe
+from core.nvidia_smi import find_nvidia_smi
 from core.public_errors import public_failure
 from services.model_manager import get_model_status, get_best_device, resolve_omnivoice_checkpoint
 from services.ffmpeg_utils import find_ffmpeg, run_ffmpeg
@@ -184,9 +185,10 @@ def _disk_free_gb() -> float:
 
 def _nvidia_live_stats() -> tuple[float, float, float] | None:
     """Return GPU%, used VRAM GiB, total VRAM GiB without an optional Python dependency."""
-    executable = shutil.which("nvidia-smi")
+    executable = find_nvidia_smi()
     if not executable:
         return None
+    selected = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",", 1)[0].strip() or "0"
     try:
         creationflags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
         result = subprocess.run(
@@ -194,7 +196,7 @@ def _nvidia_live_stats() -> tuple[float, float, float] | None:
                 executable,
                 "--query-gpu=utilization.gpu,memory.used,memory.total",
                 "--format=csv,noheader,nounits",
-                "--id=0",
+                f"--id={selected}",
             ],
             capture_output=True,
             text=True,

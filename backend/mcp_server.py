@@ -780,6 +780,9 @@ def mount_mcp(app) -> bool:
         mcp = create_mcp_server(app)
         mcp_app = mcp.streamable_http_app()
         app.state.mcp_session_manager = mcp.session_manager
+        # Network Sharing can safely admit this machine's LAN Host headers
+        # while its PIN gate is active, then remove them again on disable.
+        app.state.mcp_transport_security = mcp.settings.transport_security
         app.mount("/mcp", mcp_app)
         # The mount only matches "/mcp/..."; a bare "/mcp" would fall through
         # to the SPA StaticFiles mount at "/" (405 on POST) or, without a

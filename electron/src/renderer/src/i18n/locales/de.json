@@ -2096,6 +2096,7 @@
     "test_text": "Hallo, dies ist ein Test dieser Stimme."
   },
   "nav": {
+    "home": "Start",
     "voice": "Stimme",
     "clone_short": "Klonen",
     "workspaces": "Arbeitsbereiche",

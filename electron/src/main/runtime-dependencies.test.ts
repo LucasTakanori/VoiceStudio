@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from 'vitest';
 import { execFile } from 'node:child_process';
-import { runtimeDependenciesReady, runtimePython } from './runtime-project';
+import { RUNTIME_IMPORT_PROBE, runtimeDependenciesReady, runtimePython } from './runtime-project';
 vi.mock('node:child_process', () => ({ execFile: vi.fn() }));
 afterEach(() => {
   vi.clearAllMocks();
@@ -20,7 +20,7 @@ it.each([null, new Error('No module named uvicorn'), new Error('ETIMEDOUT'), new
     expect(await runtimeDependenciesReady(project)).toBe(error === null);
     expect(execFile).toHaveBeenCalledWith(
       runtimePython(project),
-      ['-c', 'import fastapi, uvicorn, omnivoice, faster_whisper, sentencepiece'],
+      ['-c', RUNTIME_IMPORT_PROBE],
       expect.objectContaining({
         cwd: project,
         timeout: 30_000,
@@ -35,6 +35,20 @@ it.each([null, new Error('No module named uvicorn'), new Error('ETIMEDOUT'), new
     );
   },
 );
+
+it('checks the matched native PyTorch stack before launching the backend', async () => {
+  vi.mocked(execFile).mockImplementation(((
+    _command: unknown,
+    args: unknown,
+    _options: unknown,
+    callback: (error: Error | null) => void,
+  ) => {
+    callback(String(args).includes('torchaudio') ? new Error('missing libtorchaudio.pyd') : null);
+  }) as never);
+
+  expect(await runtimeDependenciesReady('/selected-runtime')).toBe(false);
+  expect(vi.mocked(execFile).mock.calls[0]?.[1]).toEqual(['-c', RUNTIME_IMPORT_PROBE]);
+});
 
 it.each(['PYTHONPATH', 'PYTHONHOME'] as const)(
   'isolates imports from inherited %s',

@@ -1,4 +1,5 @@
 import socket
+from types import SimpleNamespace
 from unittest.mock import patch
 from services import network_share as ns
 
@@ -24,6 +25,29 @@ def test_lan_ipv4_filters_loopback_and_linklocal():
 def test_gen_pin_is_six_digits():
     pin = ns._gen_pin()
     assert pin.isdigit() and len(pin) == 6
+
+
+def test_mcp_lan_hosts_exist_only_while_pin_gated_sharing_is_enabled():
+    security = SimpleNamespace(
+        allowed_hosts=["localhost:*", "10.0.0.9:*"],
+        allowed_origins=["http://localhost:*", "http://10.0.0.9:*"],
+    )
+    app = SimpleNamespace(state=SimpleNamespace(mcp_transport_security=security))
+    ns._runtime.mcp_allowed_hosts = []
+    try:
+        ns._set_mcp_lan_hosts(app, ["192.168.1.42", "10.0.0.9"], enabled=True)
+        assert "192.168.1.42:*" in security.allowed_hosts
+        assert "http://192.168.1.42:*" in security.allowed_origins
+        assert "https://10.0.0.9:*" in security.allowed_origins
+
+        ns._set_mcp_lan_hosts(app, [], enabled=False)
+        # Entries supplied independently (for example through
+        # OMNIVOICE_MCP_ALLOWED_HOSTS) survive the sharing lifecycle.
+        assert security.allowed_hosts == ["localhost:*", "10.0.0.9:*"]
+        assert security.allowed_origins == ["http://localhost:*", "http://10.0.0.9:*"]
+    finally:
+        ns._runtime.mcp_allowed_hosts = []
+        ns._runtime.mcp_allowed_origins = []
 
 
 # ── Configurable ports (issue: user-configurable network ports) ──────────────

@@ -2096,6 +2096,7 @@
     "test_text": "こんにちは — これはこの音声のテストです。"
   },
   "nav": {
+    "home": "ホーム",
     "voice": "音声",
     "clone_short": "クローン",
     "workspaces": "ワークスペース",

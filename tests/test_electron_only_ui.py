@@ -49,6 +49,24 @@ def test_docker_builds_the_electron_renderer():
     assert "frontend/index.html" not in dockerfile
 
 
+def test_macos_dev_launcher_uses_maintained_electron_paths():
+    launcher = (ROOT / "electron/scripts/dev.mjs").read_text(encoding="utf-8")
+    assert "join(repoRoot, 'package.json')" in launcher
+    assert "join(electronRoot, 'build', 'icons', 'icon.icns')" in launcher
+    assert "'frontend'" not in launcher
+
+
+def test_home_is_a_work_launcher_not_a_repeated_brand_banner():
+    home = (ROOT / "electron/src/renderer/src/features/home/home-page.tsx").read_text(
+        encoding="utf-8"
+    )
+    assert "t('nav.home')" in home
+    assert "t('projects.create')" in home
+    assert "t('app.name')" not in home
+    assert "voicestudio.sh" not in home
+    assert "PanelLeftOpenIcon" not in home
+
+
 def test_install_smokes_build_the_pull_request_checkout_on_every_os():
     workflow = (ROOT / ".github/workflows/install-smoke.yml").read_text(encoding="utf-8")
     unix_step = workflow.split("- name: Build and install main (macOS/Linux)", 1)[1].split(

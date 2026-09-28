@@ -2096,6 +2096,7 @@
     "test_text": "你好——這是對這個聲音的測試。"
   },
   "nav": {
+    "home": "首頁",
     "voice": "聲音",
     "clone_short": "複製",
     "workspaces": "工作區",

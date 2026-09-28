@@ -1,12 +1,10 @@
-import { getBridge, isMac } from '@/components/bridge';
 import { WorkspaceHeader } from '@/components/app-shell/workspace-header';
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { Button } from '@/components/ui/button';
 import { useHistory } from '@/hooks/use-history';
 import { useProfiles } from '@/hooks/use-profiles';
-import { brandArtwork, brandIcon } from '@/lib/brand';
+import { brandArtwork } from '@/lib/brand';
 import { patchCloneSettings } from '@/lib/store/clone-settings';
-import { setWorkspace, useWorkspace } from '@/lib/store/workspace';
 import { selectCloneProfile } from '@/lib/store/reference';
 import { openTake } from '@/lib/store/takes';
 import { blankLongformDraft, editLongform } from '@/features/longform/longform-session';
@@ -26,7 +24,6 @@ import {
   FolderOpenIcon,
   LibraryIcon,
   MicIcon,
-  PanelLeftOpenIcon,
   WandSparklesIcon,
   WrenchIcon,
   WorkflowIcon,
@@ -52,15 +49,7 @@ interface ExportRecord {
 
 export function HomePage() {
   const { t } = useTranslation();
-  const { libraryOpen } = useWorkspace();
   const navigate = useNavigate();
-  const openSite = () => {
-    const bridge = getBridge();
-    const url =
-      'https://voicestudio.sh/?utm_source=voicestudio&utm_medium=desktop&utm_campaign=home_banner';
-    if (bridge) void bridge.files.openExternal(url);
-    else window.open(url, '_blank', 'noopener,noreferrer');
-  };
   const { data: profiles = [] } = useProfiles();
   const { data: history = [] } = useHistory();
   const { data: exports = [] } = useQuery({
@@ -190,20 +179,7 @@ export function HomePage() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <WorkspaceHeader>
-        {isMac() &&
-          (libraryOpen ? (
-            <img src={brandIcon} alt="" className="size-4" />
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t('clone.toggle_sidebar')}
-              onClick={() => setWorkspace({ libraryOpen: true })}
-            >
-              <PanelLeftOpenIcon />
-            </Button>
-          ))}
-        <h1 className="text-sm font-medium">{t('app.name')}</h1>
+        <h1 className="text-sm font-medium">{t('nav.home')}</h1>
         <Link
           to="/projects"
           className="ml-auto inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
@@ -214,57 +190,45 @@ export function HomePage() {
       </WorkspaceHeader>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-6xl px-6 py-7">
-          <section className="relative isolate overflow-hidden rounded-3xl border border-border/50 bg-card/30 px-7 py-8">
-            <img
-              src={brandArtwork}
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-2/3 object-cover object-right opacity-35 [mask-image:linear-gradient(90deg,transparent,black)]"
-            />
-            <div className="max-w-xl">
-              <div className="mb-4 flex size-11 items-center justify-center rounded-2xl bg-primary/10">
-                <img src={brandIcon} alt="" className="size-7" />
-              </div>
-              <h2 className="text-3xl font-semibold tracking-[-0.035em]">{t('app.name')}</h2>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-                {t('app.tagline')}
-                <button
-                  type="button"
-                  onClick={openSite}
-                  className="ml-1 text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
-                >
-                  voicestudio.sh
-                </button>
-              </p>
+          <section aria-labelledby="home-new-projects">
+            <div className="relative isolate mb-5 overflow-hidden border-b border-border/50 pb-5">
+              <img
+                src={brandArtwork}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 -z-10 h-full w-1/2 object-cover object-right opacity-25 [mask-image:linear-gradient(90deg,transparent,black)]"
+              />
+              <h2 id="home-new-projects" className="text-2xl font-semibold tracking-[-0.025em]">
+                {t('projects.create')}
+              </h2>
             </div>
-          </section>
-
-          <section className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-3">
-            {destinations.map(({ to, label, description, Icon, count }) => (
-              <Link
-                key={to}
-                to={to}
-                className="group flex min-h-36 flex-col rounded-2xl border border-border/50 bg-card/25 p-4 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="size-4" />
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-3">
+              {destinations.map(({ to, label, description, Icon, count }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="group flex min-h-36 flex-col rounded-2xl border border-border/50 bg-card/25 p-4 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="size-4" />
+                    </div>
+                    {count !== undefined && (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                        {count}
+                      </span>
+                    )}
                   </div>
-                  {count !== undefined && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
-                      {count}
-                    </span>
-                  )}
-                </div>
-                <h3 className="mt-4 flex items-center gap-2 text-sm font-semibold">
-                  {label}
-                  <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
-                </h3>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                  {description}
-                </p>
-              </Link>
-            ))}
+                  <h3 className="mt-4 flex items-center gap-2 text-sm font-semibold">
+                    {label}
+                    <ArrowRightIcon className="size-3.5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                  </h3>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                    {description}
+                  </p>
+                </Link>
+              ))}
+            </div>
           </section>
 
           {exports.length > 0 && (

@@ -2096,6 +2096,7 @@
     "test_text": "Hej – det här är ett test av denna röst."
   },
   "nav": {
+    "home": "Hem",
     "voice": "Röst",
     "clone_short": "Klona",
     "workspaces": "Arbetsytor",

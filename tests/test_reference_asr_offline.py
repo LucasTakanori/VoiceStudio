@@ -70,6 +70,156 @@ def test_supplied_transcript_does_not_look_for_asr(monkeypatch):
     lookup.assert_not_called()
 
 
+@pytest.mark.parametrize("ref_text", [None, "", "   "])
+def test_sidecar_reuses_installed_asr_for_short_reference(monkeypatch, tmp_path, ref_text):
+    """Sidecar callers must reuse catalogue ASR just like in-process cloning."""
+    import soundfile as sf
+    from huggingface_hub.errors import LocalEntryNotFoundError
+    from engines.omnivoice_subprocess import main as sidecar
+    from services import asr_backend
+
+    reference = tmp_path / "reference.wav"
+    sf.write(reference, torch.full((24_000,), 0.1).numpy(), 24_000)
+    model = _model()
+    lookup = Mock(side_effect=LocalEntryNotFoundError("model-specific Whisper not installed"))
+    monkeypatch.setattr("huggingface_hub.snapshot_download", lookup)
+    transcribe = Mock(return_value="Installed recognizer words.")
+    monkeypatch.setattr(asr_backend, "transcribe_reference", transcribe)
+
+    prompts = []
+    def synthesize(**kwargs):
+        prompts.append(model.create_voice_clone_prompt(
+            kwargs["ref_audio"], ref_text=kwargs.get("ref_text"), preprocess_prompt=False,
+        ))
+        return [torch.zeros(1, 16)]
+
+    monkeypatch.setattr(sidecar, "_load_model", lambda _: SimpleNamespace(generate=synthesize, sampling_rate=24_000))
+    monkeypatch.setattr(sidecar, "_send", lambda *_: None)
+    sidecar._handle_synthesize({"text": "New words.", "ref_audio": str(reference), "ref_text": ref_text}, None)
+    assert prompts[0].ref_text == "Installed recognizer words."
+    transcribe.assert_called_once_with(str(reference), release_after=True)
+    lookup.assert_not_called()
+
+
+@pytest.mark.parametrize("supplied", [True, False])
+@pytest.mark.parametrize("fails", [True, False])
+def test_sidecar_preserves_supplied_text_and_local_fallback(monkeypatch, supplied, fails, caplog):
+    from engines.omnivoice_subprocess import main as sidecar
+    from services import asr_backend, tts_backend
+
+    monkeypatch.setattr(tts_backend, "reference_duration_s", lambda _: 1.0)
+    transcribe = Mock(side_effect=RuntimeError("private-reference.wav")) if fails else Mock(return_value=None)
+    monkeypatch.setattr(asr_backend, "transcribe_reference", transcribe)
+    generate = Mock(return_value=[torch.zeros(1, 16)])
+    monkeypatch.setattr(sidecar, "_load_model", lambda _: SimpleNamespace(generate=generate, sampling_rate=24_000))
+    monkeypatch.setattr(sidecar, "_send", lambda *_: None)
+    words = "Verified words." if supplied else None
+    sidecar._handle_synthesize({"text": "New words.", "ref_audio": "ref.wav", "ref_text": words}, None)
+    result = generate.call_args.kwargs
+    assert result["ref_text"] == words
+    assert result["ref_audio"] == "ref.wav"
+    if supplied:
+        transcribe.assert_not_called()
+    else:
+        transcribe.assert_called_once_with("ref.wav", release_after=True)
+    assert "private-reference.wav" not in caplog.text
+
+
+def test_reference_candidate_failure_does_not_log_audio_paths(caplog):
+    from services.asr_backend import _transcribe_reference_candidates
+    backend = SimpleNamespace(
+        id="test-recognizer",
+        transcribe=Mock(side_effect=OSError("private-reference.wav")),
+    )
+    assert _transcribe_reference_candidates([backend], "private-reference.wav") == ""
+    assert "test-recognizer" in caplog.text
+    assert "private-reference.wav" not in caplog.text
+
+
+@pytest.mark.parametrize("installed", [False, True])
+def test_pytorch_reference_defers_pipeline_loading(monkeypatch, installed):
+    from services import asr_backend as ab
+    from api.routers.setup import models
+    monkeypatch.setattr(ab, "active_backend_id", lambda: "pytorch-whisper")
+    monkeypatch.setattr(ab, "_ref_audio_fingerprint", lambda _: None)
+    monkeypatch.setattr(ab, "_capture_whisper_repo", lambda: "openai/whisper-large-v3-turbo")
+    monkeypatch.setattr(ab, "dictation_model_id", lambda: None)
+    monkeypatch.setattr(ab, "_repo_installed", lambda *args, **kw: installed)
+    monkeypatch.setattr(ab, "get_capture_asr_backend", lambda: ab.PyTorchWhisperBackend())
+    monkeypatch.setattr(ab, "_recommended_asr_model", lambda *args, **kw: None)
+    monkeypatch.setattr(models, "get_model_catalog", lambda: {})
+    monkeypatch.setattr(ab, "_installed_reference_fallbacks", lambda _: [])
+    loader = Mock(side_effect=RuntimeError("network-capable loader invoked"))
+    monkeypatch.setattr(ab.PyTorchWhisperBackend, "_ensure_pipe", loader)
+    assert ab.transcribe_reference("ref.wav", release_after=True) is None
+    loader.assert_not_called()
+
+
+def test_reference_preserves_explicit_remote_provider(monkeypatch):
+    from services import asr_backend as ab
+    backend = ab.OpenAICompatASRBackend.__new__(ab.OpenAICompatASRBackend)
+    transcribe = Mock(return_value={"text": "Configured provider words."})
+    monkeypatch.setattr(backend, "transcribe", transcribe)
+    monkeypatch.setattr(ab, "active_backend_id", lambda: "openai-compat-asr")
+    monkeypatch.setattr(ab, "get_active_asr_backend", lambda **kw: backend)
+    monkeypatch.setattr(ab, "_ref_audio_fingerprint", lambda _: None)
+    monkeypatch.setattr(ab, "_capture_whisper_repo", lambda: "missing-local-model")
+    monkeypatch.setattr(ab, "dictation_model_id", lambda: None)
+    monkeypatch.setattr(ab, "_repo_installed", lambda *args, **kw: False)
+    monkeypatch.setattr(ab, "_recommended_asr_model", lambda *args, **kw: None)
+    monkeypatch.setattr(ab, "_installed_reference_fallbacks", lambda _: [])
+    assert ab.transcribe_reference("ref.wav", release_after=True) == "Configured provider words."
+    transcribe.assert_called_once_with("ref.wav", word_timestamps=False)
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_reference_releases_all_candidates_when_requested(fails):
+    from services.asr_backend import _transcribe_reference_candidates
+    first = SimpleNamespace(id="first", unload=Mock(), transcribe=Mock(
+        side_effect=RuntimeError("failed") if fails else None,
+        return_value={"text": "words"},
+    ))
+    second = SimpleNamespace(id="second", unload=Mock(), transcribe=Mock(return_value={"text": "words"}))
+    assert _transcribe_reference_candidates([first, second], "ref.wav", release_after=True) == "words"
+    first.unload.assert_called_once()
+    second.unload.assert_called_once()
+
+
+def test_mlx_unload_releases_library_model_cache(monkeypatch):
+    import sys
+    from services.asr_backend import MLXWhisperBackend
+    holder = SimpleNamespace(model=object(), model_path="local-model")
+    clear = Mock()
+    monkeypatch.setitem(sys.modules, "mlx_whisper.transcribe", SimpleNamespace(ModelHolder=holder))
+    monkeypatch.setitem(sys.modules, "mlx.core", SimpleNamespace(clear_cache=clear))
+    MLXWhisperBackend().unload()
+    assert holder.model is None
+    assert holder.model_path is None
+    clear.assert_called_once()
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_sidecar_releases_reference_asr_before_loading_tts(monkeypatch, fails):
+    from engines.omnivoice_subprocess import main as sidecar
+    from services import asr_backend as ab, tts_backend
+    released = []
+    backend = SimpleNamespace(id="test", transcribe=Mock(
+        side_effect=RuntimeError("failed") if fails else None,
+        return_value={"text": "words"},
+    ), unload=lambda: released.append(True))
+    monkeypatch.setattr(ab, "_ref_audio_fingerprint", lambda _: None)
+    monkeypatch.setattr(ab, "asr_model_missing_error", lambda **kw: "missing" if kw.get("purpose") == "dictation" else None)
+    monkeypatch.setattr(ab, "load_active_asr_backend", lambda **kw: backend)
+    monkeypatch.setattr(ab, "_installed_reference_fallbacks", lambda _: [])
+    monkeypatch.setattr(tts_backend, "reference_duration_s", lambda _: 1.0)
+    def load(_):
+        assert released == [True]
+        return SimpleNamespace(generate=lambda **kw: [torch.zeros(1, 16)], sampling_rate=24_000)
+    monkeypatch.setattr(sidecar, "_load_model", load)
+    monkeypatch.setattr(sidecar, "_send", lambda *_: None)
+    sidecar._handle_synthesize({"text": "New words.", "ref_audio": "ref.wav"}, None)
+
+
 def test_catalogue_ct2_reference_is_reused_without_transformers_asr(monkeypatch, tmp_path):
     from collections import OrderedDict
     from services import asr_backend as ab, sherpa_dictation

@@ -156,13 +156,13 @@ function launchElectronVite() {
     const electronPackage = require.resolve('electron/package.json');
     const { version: electronVersion } = JSON.parse(readFileSync(electronPackage, 'utf8'));
     const { version: appVersion } = JSON.parse(
-      readFileSync(join(repoRoot, 'frontend', 'package.json'), 'utf8'),
+      readFileSync(join(repoRoot, 'package.json'), 'utf8'),
     );
     env.ELECTRON_EXEC_PATH = prepareMacDevElectron({
       electronExecutable: require('electron'),
       electronVersion,
       appVersion,
-      iconPath: join(repoRoot, 'frontend', 'src-tauri', 'icons', 'icon.icns'),
+      iconPath: join(electronRoot, 'build', 'icons', 'icon.icns'),
     });
   }
 

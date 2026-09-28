@@ -14,12 +14,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
+import subprocess
 from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from core.logging_utils import log_safe
+from core.nvidia_smi import find_nvidia_smi
 from core.engine_licenses import LICENSE_GATED_ENGINES
 from api.dependencies import require_admin, require_admin_action
 
@@ -270,6 +273,97 @@ def set_compute_device(body: _ComputeDeviceBody):
         logger.exception("set_compute_device failed")
         raise HTTPException(status_code=500, detail="Failed to persist setting")
     return _compute_device_state()
+
+
+# ── CUDA adapter selection (multi-GPU hosts) ─────────────────────────────
+
+
+_CUDA_VISIBLE_DEVICES = "CUDA_VISIBLE_DEVICES"
+_CUDA_UUID = re.compile(r"^GPU-[A-Za-z0-9-]+$")
+
+
+class _CudaDeviceBody(BaseModel):
+    value: str = Field(..., description="auto or an NVIDIA GPU UUID")
+
+
+def _cuda_devices() -> list[dict]:
+    """Enumerate physical NVIDIA adapters without importing torch.
+
+    ``torch.cuda`` only exposes adapters allowed by CUDA_VISIBLE_DEVICES, so it
+    cannot offer a way back to a currently hidden card. nvidia-smi sees the
+    physical inventory and gives us stable UUIDs, which CUDA accepts directly.
+    """
+    executable = find_nvidia_smi()
+    if not executable:
+        return []
+    try:
+        result = subprocess.run(
+            [
+                executable,
+                "--query-gpu=index,uuid,name",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        logger.debug("CUDA adapter enumeration failed", exc_info=True)
+        return []
+    if result.returncode != 0:
+        return []
+    devices = []
+    for line in result.stdout.splitlines():
+        parts = [part.strip() for part in line.split(",", 2)]
+        if len(parts) != 3 or not parts[0].isdigit() or not _CUDA_UUID.fullmatch(parts[1]):
+            continue
+        devices.append({"index": int(parts[0]), "value": parts[1], "name": parts[2]})
+    return devices
+
+
+def _cuda_device_state() -> dict:
+    from core import prefs
+
+    external = prefs.is_env_shadowed(_CUDA_VISIBLE_DEVICES)
+    saved = str(prefs.get(f"env.{_CUDA_VISIBLE_DEVICES}", "") or "").strip()
+    applied = (
+        os.environ[_CUDA_VISIBLE_DEVICES].strip() or "disabled"
+        if _CUDA_VISIBLE_DEVICES in os.environ else "auto"
+    )
+    value = applied if external else saved
+    return {
+        "value": value or "auto",
+        "applied": applied,
+        "restart_required": (value or "auto") != applied,
+        "env_pinned": external,
+        "devices": _cuda_devices(),
+    }
+
+
+@router.get("/cuda-device")
+def get_cuda_device():
+    """Physical CUDA adapter selected for the next backend launch."""
+    return _cuda_device_state()
+
+
+@router.put("/cuda-device")
+def set_cuda_device(body: _CudaDeviceBody):
+    """Persist CUDA_VISIBLE_DEVICES before torch is imported on next launch."""
+    from core import prefs
+
+    value = (body.value or "").strip()
+    if value != "auto" and value not in {device["value"] for device in _cuda_devices()}:
+        raise HTTPException(status_code=400, detail="Unknown CUDA adapter")
+    try:
+        if value == "auto":
+            prefs.delete(f"env.{_CUDA_VISIBLE_DEVICES}")
+        else:
+            prefs.set_(f"env.{_CUDA_VISIBLE_DEVICES}", value)
+    except Exception:
+        logger.exception("set_cuda_device failed")
+        raise HTTPException(status_code=500, detail="Failed to persist CUDA adapter")
+    return _cuda_device_state()
 
 
 # ── Generation-history retention (Studio takes rail) ──────────────────────

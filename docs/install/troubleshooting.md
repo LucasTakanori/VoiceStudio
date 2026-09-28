@@ -48,7 +48,39 @@ Before digging through the entries below, let the app diagnose itself:
   the engine. Subprocess engines report memory visibility as false because
   their accelerator allocations belong to the child process.
 
+## Backend cannot bind its local port
+
+Windows can reserve port ranges even when no process is listening. If the OS
+denies binding the default port 3900, Electron's managed backend selects another
+loopback port before launching; its API proxy and health checks follow that port
+automatically. Candidates advance by 1000, up to 16 alternatives, so additional
+app windows discover and attach to the same backend. A fresh launch retries the
+default after a fallback backend stops. This recovery is available on all desktop platforms.
+Occupied fallback ports must carry VoiceStudio's backend response marker before
+attachment; unrelated listeners are skipped. This marker distinguishes services,
+not malicious processes running as the same local user.
+If an identified backend is still starting, Electron waits within its startup
+budget instead of launching another process on that occupied port.
+It does not override an explicit `OMNIVOICE_PORT`, a custom backend command, or an
+externally managed backend. For those configurations, choose an allowed port in
+your launch environment. An ordinary “address already in use” conflict still uses
+the existing backend-attachment/conflict flow; VoiceStudio does not stop unrelated
+processes or change firewall rules.
+
 ## Generation failure diagnosis
+
+OmniVoice's in-process and subprocess engines both reuse an installed speech
+recognizer when reference audio has no transcript, including short clips sent
+through batch or API callers. A supplied transcript is preserved for short
+references. Subprocess reference recognition runs inside the killable child,
+under its synthesis watchdog, releasing reference ASR weights before loading TTS.
+Sidecar stderr is scrubbed for home directories and secrets before logging.
+This does not download an ASR model automatically: if no installed
+recognizer can transcribe the clip and no local model fallback is available,
+provide the matching transcript or explicitly install a speech-to-text model.
+Unknown or unverifiable ASR selections are skipped for automatic reference
+transcription. An explicitly selected OpenAI-compatible ASR provider retains its
+opt-in behavior; it does not need local model weights. Default ASR remains local.
 
 Streaming and HTTP generation failures can identify these causes. Electron and
 web clients show the recovery guidance in the selected language; API clients

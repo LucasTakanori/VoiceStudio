@@ -2098,6 +2098,7 @@
     "test_text": "Hola, esta es una prueba de esta voz."
   },
   "nav": {
+    "home": "Inicio",
     "voice": "Voz",
     "clone_short": "Clonar",
     "workspaces": "Espacios de trabajo",

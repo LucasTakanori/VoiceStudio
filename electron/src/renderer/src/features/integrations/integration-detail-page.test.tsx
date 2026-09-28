@@ -89,21 +89,12 @@ it('shows the Codex TOML export and one heading per panel', () => {
   expect(screen.queryByRole('heading', { name: 'Details' })).toBeNull();
 });
 
-it('presents entries without a setup block as external links with no capability claims', () => {
+it('does not expose detail pages for entries without completed wiring', () => {
   route.slug = 'zapier';
   render(<IntegrationDetailPage />);
   expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
   expect(screen.queryByText('Works with VoiceStudio')).toBeNull();
-  expect(screen.getByRole('heading', { name: 'Website' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Capabilities' })).toBeInTheDocument();
-});
-
-it('opens a featured sponsor on its own detail page', () => {
-  route.slug = 'example-sponsor';
-  render(<IntegrationDetailPage />);
-  expect(screen.getByRole('heading', { name: 'Example sponsor', level: 2 })).toBeInTheDocument();
-  expect(screen.getAllByText('Featured')).toHaveLength(2);
-  expect(screen.getByText('https://example.org')).toBeInTheDocument();
+  expect(screen.getByText('No matches')).toBeInTheDocument();
 });
 
 it('offers copyable API snippets for the current backend', () => {

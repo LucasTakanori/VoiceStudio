@@ -2096,6 +2096,7 @@
     "test_text": "Halo - ini adalah ujian untuk suara ini."
   },
   "nav": {
+    "home": "Beranda",
     "voice": "Suara",
     "clone_short": "Klon",
     "workspaces": "Ruang kerja",

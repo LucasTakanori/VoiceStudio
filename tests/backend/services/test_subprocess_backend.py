@@ -36,6 +36,20 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ECHO_SCRIPT = REPO_ROOT / "backend" / "engines" / "_echo" / "main.py"
 
 
+@pytest.mark.parametrize("home", ["/Users/private-user", "/home/private-user", "C:\\Users\\private-user"])
+def test_stderr_scrubbed_before_logging_and_buffering(home, caplog):
+    from types import SimpleNamespace
+    backend = EchoBackend()
+    tail = collections.deque()
+    separator = "\\" if home.startswith("C:") else "/"
+    proc = SimpleNamespace(stderr=io.BytesIO(f"transcribing {home}{separator}reference.wav\n".encode()))
+    with caplog.at_level("INFO"):
+        backend._drain_stderr(proc, tail)
+    assert "private-user" not in caplog.text
+    assert "private-user" not in str(list(tail))
+    assert f"~{separator}reference.wav" in caplog.text
+
+
 # ── test-only subclass ─────────────────────────────────────────────────────
 
 

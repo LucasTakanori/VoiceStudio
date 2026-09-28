@@ -230,8 +230,9 @@ def test_nvidia_driver_probe_finds_wsl_system_binary(monkeypatch):
     from types import SimpleNamespace
 
     calls = []
-    monkeypatch.setattr(capabilities.shutil, "which", lambda _name: None)
-    monkeypatch.setattr(capabilities.os.path, "isfile", lambda path: path == "/usr/lib/wsl/lib/nvidia-smi")
+    monkeypatch.setattr(
+        capabilities, "find_nvidia_smi", lambda: "/usr/lib/wsl/lib/nvidia-smi"
+    )
     monkeypatch.setattr(
         capabilities.subprocess,
         "run",

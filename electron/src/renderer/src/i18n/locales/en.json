@@ -182,6 +182,7 @@
     "toast_flush_failed": "Flush failed: {{message}}"
   },
   "nav": {
+    "home": "Home",
     "voice": "Voice",
     "clone_short": "Clone",
     "clone": "Voice cloning",

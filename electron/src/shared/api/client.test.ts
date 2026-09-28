@@ -101,7 +101,7 @@ describe('apiFetch short-lived admin authentication', () => {
   it('attaches only the backend-bound short-lived session, never the persisted master', async () => {
     const session = `ovs_admin_session_${'S'.repeat(43)}`;
     localStorage.setItem('ov_api_key', 'legacy-master');
-    sessionStorage.setItem(
+    localStorage.setItem(
       ADMIN_SESSION_STORAGE_KEY,
       JSON.stringify({ token: session, expiresAt: Date.now() / 1000 + 3600, apiBase: API }),
     );
@@ -127,7 +127,7 @@ describe('apiFetch short-lived admin authentication', () => {
   it('never sends backend credentials to an absolute foreign URL', async () => {
     const session = `ovs_admin_session_${'S'.repeat(43)}`;
     sessionStorage.setItem('ov_pin', '424242');
-    sessionStorage.setItem(
+    localStorage.setItem(
       ADMIN_SESSION_STORAGE_KEY,
       JSON.stringify({ token: session, expiresAt: Date.now() / 1000 + 3600, apiBase: API }),
     );
@@ -197,7 +197,7 @@ describe('apiFetch 401 routing', () => {
     dispatch.mock.calls.map((c) => c[0]).find((e) => (e as Event).type === 'ov:auth-required');
 
   it('dispatches ov:auth-required {mode:"apikey"} on an "API key required" 401', async () => {
-    sessionStorage.setItem(
+    localStorage.setItem(
       ADMIN_SESSION_STORAGE_KEY,
       JSON.stringify({
         token: `ovs_admin_session_${'S'.repeat(43)}`,
@@ -214,7 +214,7 @@ describe('apiFetch 401 routing', () => {
     }
     expect(authEvent()).toBeTruthy();
     expect((authEvent() as any).detail.mode).toBe('apikey');
-    expect(sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ADMIN_SESSION_STORAGE_KEY)).toBeNull();
   });
 
   it('dispatches ov:auth-required {mode:"pin"} on a "PIN required" 401', async () => {
@@ -259,7 +259,7 @@ describe('apiFetch 401 routing', () => {
     // user completes another key exchange. A late 403 may only invalidate the
     // credentials the failed request actually carried — wiping the fresh
     // session or reopening the gate would undo the successful login.
-    sessionStorage.setItem(
+    localStorage.setItem(
       ADMIN_SESSION_STORAGE_KEY,
       JSON.stringify({
         token: `ovs_admin_session_${'O'.repeat(43)}`,
@@ -268,7 +268,7 @@ describe('apiFetch 401 routing', () => {
       }),
     );
     globalThis.fetch = vi.fn(() => {
-      sessionStorage.setItem(
+      localStorage.setItem(
         ADMIN_SESSION_STORAGE_KEY,
         JSON.stringify({
           token: `ovs_admin_session_${'N'.repeat(43)}`,
@@ -290,7 +290,7 @@ describe('apiFetch 401 routing', () => {
       /* ApiError expected */
     }
     expect(authEvent()).toBeFalsy();
-    expect(sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY)).not.toBeNull();
+    expect(localStorage.getItem(ADMIN_SESSION_STORAGE_KEY)).not.toBeNull();
   });
 });
 

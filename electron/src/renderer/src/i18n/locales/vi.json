@@ -2096,6 +2096,7 @@
     "test_text": "Xin chào - đây là bài kiểm tra giọng nói này."
   },
   "nav": {
+    "home": "Trang chủ",
     "voice": "Giọng nói",
     "clone_short": "Nhân bản",
     "workspaces": "Không gian làm việc",
