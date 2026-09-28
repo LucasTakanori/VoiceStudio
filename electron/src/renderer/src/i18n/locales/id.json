@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/Pengguna/Anda/Film/sample.mp4",
     "probe_failed": "Pemeriksaan gagal: {{message}}",
     "parse_failed": "Gagal menguraikan: {{message}}",
-    "fit_failed": "Gagal memasang: {{message}}"
+    "fit_failed": "Gagal memasang: {{message}}",
+    "merge_audio": "Gabungkan audio",
+    "merge_audio_desc": "Gabungkan klip audio menjadi satu WAV untuk digunakan sebagai referensi suara.",
+    "choose_audio_files": "Pilih file audio",
+    "merge_order_hint": "Klip digabungkan sesuai urutan yang ditampilkan. Gunakan panah untuk mengubah urutan.",
+    "merge_too_many_files": "Pilih paling banyak 20 file.",
+    "move_up": "Pindahkan ke atas",
+    "move_down": "Pindahkan ke bawah",
+    "remove_file": "Hapus file",
+    "merge_files": "Gabungkan file",
+    "merged_audio": "Audio gabungan",
+    "download_merged": "Unduh WAV gabungan"
   },
   "projects": {
     "title": "Proyek",

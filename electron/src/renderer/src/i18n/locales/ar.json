@@ -1514,7 +1514,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "فشل التحقيق: {{message}}",
     "parse_failed": "فشل التحليل: {{message}}",
-    "fit_failed": "فشل الملاءمة: {{message}}"
+    "fit_failed": "فشل الملاءمة: {{message}}",
+    "merge_audio": "دمج الصوت",
+    "merge_audio_desc": "ادمج المقاطع الصوتية في ملف WAV واحد لاستخدامه كمرجع للصوت.",
+    "choose_audio_files": "اختر الملفات الصوتية",
+    "merge_order_hint": "تُدمج المقاطع حسب الترتيب المعروض. استخدم الأسهم لتغيير الترتيب.",
+    "merge_too_many_files": "اختر 20 ملفًا كحد أقصى.",
+    "move_up": "نقل لأعلى",
+    "move_down": "نقل لأسفل",
+    "remove_file": "إزالة الملف",
+    "merge_files": "دمج الملفات",
+    "merged_audio": "الصوت المدمج",
+    "download_merged": "تنزيل ملف WAV المدمج"
   },
   "projects": {
     "title": "المشاريع",

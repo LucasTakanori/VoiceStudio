@@ -1508,7 +1508,18 @@
     "probe_placeholder": "/Utilisateurs/vous/Films/sample.mp4",
     "probe_failed": "Échec de la sonde : {{message}}",
     "parse_failed": "Échec de l'analyse : {{message}}",
-    "fit_failed": "Échec de l'ajustement : {{message}}"
+    "fit_failed": "Échec de l'ajustement : {{message}}",
+    "merge_audio": "Fusionner des fichiers audio",
+    "merge_audio_desc": "Assemblez des clips audio en un seul WAV à utiliser comme référence vocale.",
+    "choose_audio_files": "Choisir des fichiers audio",
+    "merge_order_hint": "Les clips sont assemblés dans l’ordre affiché. Utilisez les flèches pour modifier l’ordre.",
+    "merge_too_many_files": "Choisissez 20 fichiers maximum.",
+    "move_up": "Monter",
+    "move_down": "Descendre",
+    "remove_file": "Supprimer le fichier",
+    "merge_files": "Fusionner les fichiers",
+    "merged_audio": "Audio fusionné",
+    "download_merged": "Télécharger le WAV fusionné"
   },
   "projects": {
     "title": "Projets",

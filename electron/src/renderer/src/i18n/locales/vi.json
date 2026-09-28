@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/Users/bạn/Phim/sample.mp4",
     "probe_failed": "Thăm dò không thành công: {{message}}",
     "parse_failed": "Phân tích cú pháp không thành công: {{message}}",
-    "fit_failed": "Lắp không thành công: {{message}}"
+    "fit_failed": "Lắp không thành công: {{message}}",
+    "merge_audio": "Ghép âm thanh",
+    "merge_audio_desc": "Ghép các đoạn âm thanh thành một tệp WAV để dùng làm giọng tham chiếu.",
+    "choose_audio_files": "Chọn tệp âm thanh",
+    "merge_order_hint": "Các đoạn được ghép theo thứ tự hiển thị. Dùng mũi tên để thay đổi thứ tự.",
+    "merge_too_many_files": "Chọn tối đa 20 tệp.",
+    "move_up": "Di chuyển lên",
+    "move_down": "Di chuyển xuống",
+    "remove_file": "Xóa tệp",
+    "merge_files": "Ghép tệp",
+    "merged_audio": "Âm thanh đã ghép",
+    "download_merged": "Tải WAV đã ghép xuống"
   },
   "projects": {
     "title": "Dự án",

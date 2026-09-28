@@ -1386,7 +1386,18 @@
     "probe_placeholder": "/Utenti/tu/Film/sample.mp4",
     "probe_failed": "Sonda fallita: {{message}}",
     "parse_failed": "Analisi non riuscita: {{message}}",
-    "fit_failed": "Adattamento non riuscito: {{message}}"
+    "fit_failed": "Adattamento non riuscito: {{message}}",
+    "merge_audio": "Unisci audio",
+    "merge_audio_desc": "Unisci le clip audio in un unico WAV da usare come riferimento vocale.",
+    "choose_audio_files": "Scegli file audio",
+    "merge_order_hint": "Le clip vengono unite nell’ordine mostrato. Usa le frecce per cambiarlo.",
+    "merge_too_many_files": "Scegli al massimo 20 file.",
+    "move_up": "Sposta su",
+    "move_down": "Sposta giù",
+    "remove_file": "Rimuovi file",
+    "merge_files": "Unisci file",
+    "merged_audio": "Audio unito",
+    "download_merged": "Scarica il WAV unito"
   },
   "projects": {
     "title": "Progetti",

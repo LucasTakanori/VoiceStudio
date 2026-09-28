@@ -1510,7 +1510,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "Помилка перевірки: {{message}}",
     "parse_failed": "Помилка аналізу: {{message}}",
-    "fit_failed": "Помилка підгонки: {{message}}"
+    "fit_failed": "Помилка підгонки: {{message}}",
+    "merge_audio": "Об’єднати аудіо",
+    "merge_audio_desc": "Об’єднайте аудіокліпи в один WAV для використання як зразка голосу.",
+    "choose_audio_files": "Вибрати аудіофайли",
+    "merge_order_hint": "Кліпи об’єднуються в показаному порядку. Змініть порядок стрілками.",
+    "merge_too_many_files": "Виберіть не більше 20 файлів.",
+    "move_up": "Перемістити вгору",
+    "move_down": "Перемістити вниз",
+    "remove_file": "Видалити файл",
+    "merge_files": "Об’єднати файли",
+    "merged_audio": "Об’єднане аудіо",
+    "download_merged": "Завантажити об’єднаний WAV"
   },
   "projects": {
     "title": "Проекти",

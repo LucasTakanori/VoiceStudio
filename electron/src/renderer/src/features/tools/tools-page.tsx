@@ -1,4 +1,9 @@
-import { AudioWaveformIcon, GitCompareArrowsIcon, WrenchIcon } from 'lucide-react';
+import {
+  AudioWaveformIcon,
+  GitCompareArrowsIcon,
+  ListMusicIcon,
+  WrenchIcon,
+} from 'lucide-react';
 import { SecondarySidebar } from '@/components/workspace-sidebar';
 import { ConvertVoice } from './convert-voice';
 import { WorkspaceHeader } from '@/components/app-shell/workspace-header';
@@ -13,6 +18,7 @@ import { PipelineFailure } from '@/components/pipeline-failure';
 import { apiJson, describeError } from '@/lib/api/client';
 import { LanguagePicker } from '@/features/clone/language-picker';
 import { LANG_CODES } from '@shared/utils/languages';
+import { MergeAudio } from './merge-audio';
 const options = LANG_CODES.map((item) => item.label);
 const tools = [
   {
@@ -42,6 +48,7 @@ export function ToolsPage() {
   const { t } = useTranslation();
   const [comparing, setComparing] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [merging, setMerging] = useState(false);
   const [selected, setSelected] = useState<Tool>(tools[0]);
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -59,11 +66,16 @@ export function ToolsPage() {
             <Button
               key={tool.id}
               className="h-9 w-full justify-start gap-2.5 rounded-lg px-2.5 font-normal [&_svg]:text-muted-foreground"
-              variant={!converting && !comparing && selected.id === tool.id ? 'secondary' : 'ghost'}
-              aria-pressed={!converting && !comparing && selected.id === tool.id}
+              variant={
+                !converting && !comparing && !merging && selected.id === tool.id
+                  ? 'secondary'
+                  : 'ghost'
+              }
+              aria-pressed={!converting && !comparing && !merging && selected.id === tool.id}
               onClick={() => {
                 setConverting(false);
                 setComparing(false);
+                setMerging(false);
                 setSelected(tool);
               }}
             >
@@ -73,10 +85,11 @@ export function ToolsPage() {
           ))}
           <Button
             className="h-9 w-full justify-start gap-2.5 rounded-lg px-2.5 font-normal [&_svg]:text-muted-foreground"
-            variant={!converting && comparing ? 'secondary' : 'ghost'}
-            aria-pressed={!converting && comparing}
+            variant={!converting && !merging && comparing ? 'secondary' : 'ghost'}
+            aria-pressed={!converting && !merging && comparing}
             onClick={() => {
               setConverting(false);
+              setMerging(false);
               setComparing(true);
             }}
           >
@@ -85,16 +98,34 @@ export function ToolsPage() {
           </Button>
           <Button
             className="h-9 w-full justify-start gap-2.5 rounded-lg px-2.5 font-normal [&_svg]:text-muted-foreground"
-            variant={converting ? 'secondary' : 'ghost'}
-            aria-pressed={converting}
-            onClick={() => setConverting(true)}
+            variant={!merging && converting ? 'secondary' : 'ghost'}
+            aria-pressed={!merging && converting}
+            onClick={() => {
+              setMerging(false);
+              setConverting(true);
+            }}
           >
             <AudioWaveformIcon />
             {t('convert.convert')}
           </Button>
+          <Button
+            className="h-9 w-full justify-start gap-2.5 rounded-lg px-2.5 font-normal [&_svg]:text-muted-foreground"
+            variant={merging ? 'secondary' : 'ghost'}
+            aria-pressed={merging}
+            onClick={() => {
+              setConverting(false);
+              setComparing(false);
+              setMerging(true);
+            }}
+          >
+            <ListMusicIcon />
+            {t('tools.merge_audio')}
+          </Button>
         </SecondarySidebar>
         <section className="min-w-0 flex-1 overflow-y-auto px-6 py-8">
-          {converting ? (
+          {merging ? (
+            <MergeAudio />
+          ) : converting ? (
             <ConvertVoice />
           ) : comparing ? (
             <CompareVoices />

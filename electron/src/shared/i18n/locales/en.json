@@ -1625,7 +1625,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "Probe failed: {{message}}",
     "parse_failed": "Parse failed: {{message}}",
-    "fit_failed": "Fit failed: {{message}}"
+    "fit_failed": "Fit failed: {{message}}",
+    "merge_audio": "Merge audio",
+    "merge_audio_desc": "Join audio clips into one WAV you can use as a voice reference.",
+    "choose_audio_files": "Choose audio files",
+    "merge_order_hint": "Clips are joined in the order shown. Use the arrows to change the order.",
+    "merge_too_many_files": "Choose no more than 20 files.",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "remove_file": "Remove file",
+    "merge_files": "Merge files",
+    "merged_audio": "Merged audio",
+    "download_merged": "Download merged WAV"
   },
   "projects": {
     "title": "Projects",

@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/Kullanıcılar/siz/Filmler/sample.mp4",
     "probe_failed": "Prob başarısız oldu: {{message}}",
     "parse_failed": "Ayrıştırma başarısız oldu: {{message}}",
-    "fit_failed": "Sığdırma başarısız oldu: {{message}}"
+    "fit_failed": "Sığdırma başarısız oldu: {{message}}",
+    "merge_audio": "Ses dosyalarını birleştir",
+    "merge_audio_desc": "Ses kliplerini ses referansı olarak kullanabileceğiniz tek bir WAV dosyasında birleştirin.",
+    "choose_audio_files": "Ses dosyalarını seç",
+    "merge_order_hint": "Klipler gösterilen sırayla birleştirilir. Sırayı değiştirmek için okları kullanın.",
+    "merge_too_many_files": "En fazla 20 dosya seçin.",
+    "move_up": "Yukarı taşı",
+    "move_down": "Aşağı taşı",
+    "remove_file": "Dosyayı kaldır",
+    "merge_files": "Dosyaları birleştir",
+    "merged_audio": "Birleştirilmiş ses",
+    "download_merged": "Birleştirilmiş WAV dosyasını indir"
   },
   "projects": {
     "title": "Projeler",

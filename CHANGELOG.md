@@ -9,6 +9,7 @@ metadata and the backend fallback mirror it.
 ## [Unreleased]
 
 **Highlights**
+- Merge ordered audio clips into one WAV for use as a voice reference
 - Electron is now the only desktop and web UI; the retired Tauri shell and legacy entry points are removed (#2343)
 - Docker and browser deployments now use the same maintained interface as the Electron desktop app (#2341)
 - Manage Projects with confirmed individual and bulk deletion, retry failed items, and keep exported files and render audio (#2333)

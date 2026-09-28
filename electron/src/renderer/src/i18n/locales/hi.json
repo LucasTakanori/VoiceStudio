@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/उपयोगकर्ता/आप/मूवीज़/नमूना.mp4",
     "probe_failed": "जांच विफल: {{message}}",
     "parse_failed": "पार्स विफल: {{message}}",
-    "fit_failed": "फ़िट विफल: {{message}}"
+    "fit_failed": "फ़िट विफल: {{message}}",
+    "merge_audio": "ऑडियो जोड़ें",
+    "merge_audio_desc": "वॉइस संदर्भ के रूप में इस्तेमाल करने के लिए ऑडियो क्लिप को एक WAV में जोड़ें।",
+    "choose_audio_files": "ऑडियो फ़ाइलें चुनें",
+    "merge_order_hint": "क्लिप दिखाए गए क्रम में जुड़ेंगी। क्रम बदलने के लिए तीरों का उपयोग करें।",
+    "merge_too_many_files": "अधिकतम 20 फ़ाइलें चुनें।",
+    "move_up": "ऊपर ले जाएँ",
+    "move_down": "नीचे ले जाएँ",
+    "remove_file": "फ़ाइल हटाएँ",
+    "merge_files": "फ़ाइलें जोड़ें",
+    "merged_audio": "जोड़ा गया ऑडियो",
+    "download_merged": "जोड़ा गया WAV डाउनलोड करें"
   },
   "projects": {
     "title": "परियोजनाएं",

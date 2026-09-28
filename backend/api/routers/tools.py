@@ -11,18 +11,21 @@ Shipped today:
     POST /tools/incremental → plan what segments need regenerating.
     POST /tools/direction   → parse a natural-language direction into tokens.
     POST /tools/rate-fit    → LLM-assisted slot-fit for translated text.
+    POST /tools/merge-audio → concatenate uploaded audio clips into a WAV.
 
-More utilities (vocal separation, alignment, merge) are wired through
-existing dub helpers and land in follow-up passes.
+More utilities (vocal separation and alignment) remain for follow-up passes.
 """
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
+import math
 import os
 import re
-from typing import Optional
+import tempfile
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from fastapi.responses import Response
@@ -30,12 +33,137 @@ from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from services import director, speech_rate, incremental
-from services.ffmpeg_utils import find_ffprobe, spawn_subprocess
+from services.ffmpeg_utils import find_ffmpeg, find_ffprobe, run_ffmpeg, spawn_subprocess
 from api.dependencies import require_native_access
 from core.path_security import UnsafePath, resolve_within
 
 logger = logging.getLogger("omnivoice.tools")
 router = APIRouter()
+
+
+def _write_audio_input(path: str, data: bytes) -> None:
+    with open(path, "wb") as audio_file:
+        audio_file.write(data)
+
+
+def _read_audio_output(path: str) -> bytes:
+    with open(path, "rb") as audio_file:
+        return audio_file.read()
+
+
+async def _communicate_with_timeout(
+    proc: Any, timeout: float
+) -> tuple[bytes | None, bytes | None]:
+    try:
+        return await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except (asyncio.TimeoutError, asyncio.CancelledError):
+        with contextlib.suppress(ProcessLookupError, OSError):
+            proc.kill()
+        with contextlib.suppress(Exception):
+            await asyncio.wait_for(proc.wait(), timeout=5)
+        raise
+
+
+@router.post("/tools/merge-audio", dependencies=[Depends(require_native_access)])
+async def merge_audio(files: list[UploadFile] = File(...)):
+    """Concatenate uploaded audio clips in order into a clone-ready WAV."""
+    if not 2 <= len(files) <= 20:
+        raise HTTPException(status_code=422, detail="Choose between 2 and 20 audio files.")
+
+    ffmpeg = find_ffmpeg()
+    if not ffmpeg:
+        raise HTTPException(status_code=501, detail="FFmpeg is not available. Open Settings → Audio tools to install it.")
+    ffprobe = find_ffprobe()
+    if not ffprobe:
+        raise HTTPException(status_code=501, detail="FFprobe is not available. Open Settings → Audio tools to install it.")
+
+    max_file_bytes = 64 * 1024 * 1024
+    max_total_bytes = 256 * 1024 * 1024
+    max_total_duration = 30 * 60
+    total_bytes = 0
+    inputs: list[bytes] = []
+    for upload in files:
+        data = await upload.read(max_file_bytes + 1)
+        if not data:
+            raise HTTPException(status_code=422, detail="One of the selected files is empty.")
+        if len(data) > max_file_bytes:
+            raise HTTPException(status_code=413, detail="Each audio file must be 64 MiB or smaller.")
+        total_bytes += len(data)
+        if total_bytes > max_total_bytes:
+            raise HTTPException(status_code=413, detail="The selected audio files exceed 256 MiB total.")
+        inputs.append(data)
+
+    with tempfile.TemporaryDirectory(prefix="voicestudio-merge-") as temp_dir:
+        input_paths = [os.path.join(temp_dir, f"input-{index}.audio") for index in range(len(inputs))]
+        output_path = os.path.join(temp_dir, "merged.wav")
+        for path, data in zip(input_paths, inputs, strict=True):
+            await run_in_threadpool(_write_audio_input, path, data)
+
+        total_duration = 0.0
+        for path in input_paths:
+            probe = await spawn_subprocess(
+                ffprobe, "-v", "error", "-select_streams", "a:0",
+                "-show_entries", "stream=duration:format=duration", "-of", "json", path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout, _ = await _communicate_with_timeout(probe, 30)
+            except asyncio.TimeoutError as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail="One or more files could not be read as audio.",
+                ) from exc
+            try:
+                metadata = json.loads(stdout.decode("utf-8")) if probe.returncode == 0 else {}
+                stream_duration = (metadata.get("streams") or [{}])[0].get("duration")
+                try:
+                    duration = float(stream_duration)
+                except (ValueError, TypeError):
+                    duration = float(metadata.get("format", {}).get("duration", 0))
+            except (ValueError, TypeError, json.JSONDecodeError, AttributeError):
+                duration = 0.0
+            if not math.isfinite(duration) or duration <= 0:
+                raise HTTPException(status_code=422, detail="One or more files could not be read as audio.")
+            total_duration += duration
+            if total_duration > max_total_duration:
+                raise HTTPException(status_code=413, detail="The combined audio must be 30 minutes or shorter.")
+
+        filters = []
+        for index in range(len(input_paths)):
+            filters.append(
+                f"[{index}:a:0]aresample=24000,aformat=sample_fmts=fltp:channel_layouts=mono,"
+                f"asetpts=PTS-STARTPTS[a{index}]"
+            )
+        concat_inputs = "".join(f"[a{index}]" for index in range(len(input_paths)))
+        filters.append(f"{concat_inputs}concat=n={len(input_paths)}:v=0:a=1[out]")
+        command = [ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "error", "-y"]
+        for path in input_paths:
+            command.extend(["-i", path])
+        command.extend([
+            "-filter_complex", ";".join(filters), "-map", "[out]",
+            "-c:a", "pcm_s16le", "-ar", "24000", "-ac", "1", "-f", "wav", output_path,
+        ])
+        try:
+            returncode, _, stderr = await run_ffmpeg(command, timeout=300, capture=False)
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(
+                status_code=408,
+                detail="Audio merge took too long. Try shorter clips.",
+            ) from exc
+        if returncode != 0:
+            logger.info("Audio merge decode failed: %s", (stderr or b"").decode(errors="replace")[-1000:])
+            raise HTTPException(status_code=422, detail="One or more files could not be read as audio.")
+        try:
+            output = await run_in_threadpool(_read_audio_output, output_path)
+        except OSError as exc:
+            raise HTTPException(status_code=500, detail="The merged audio file could not be created.") from exc
+
+    return Response(
+        output,
+        media_type="audio/wav",
+        headers={"Content-Disposition": 'attachment; filename="merged-reference.wav"'},
+    )
 
 
 # ── Probe (ffprobe wrapper) ────────────────────────────────────────────────

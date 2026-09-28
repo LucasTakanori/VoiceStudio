@@ -1,12 +1,16 @@
 # Electron tools workspace
 
-Tools in the cloning sidebar or command search opens three utility panes:
+The Tools workspace provides these utility panes:
 
 - Directorial AI parses direction into instruction, translation hint, rate bias,
   tokens and taxonomy using the existing direction service.
 - Speech-rate fit submits translated text, a positive time slot and target
   language to the existing fitting service. Invalid durations block submission.
 - Probe file submits an absolute path to the existing ffprobe metadata endpoint.
+- Merge audio uploads 2–20 local clips, lets the user set their order, and
+  concatenates them into a mono 24 kHz PCM WAV for use as a voice reference.
+  Inputs are limited to 64 MiB each, 256 MiB total, and 30 minutes combined;
+  processing uses the configured local FFmpeg tools.
 
 Each operation starts only on explicit submission. Switching tools aborts the
 frontend request and prevents stale results from replacing another tool's content.

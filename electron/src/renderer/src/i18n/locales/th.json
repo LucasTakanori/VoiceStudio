@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/Users/you/ภาพยนตร์/sample.mp4",
     "probe_failed": "การสอบสวนล้มเหลว: {{message}}",
     "parse_failed": "แยกวิเคราะห์ล้มเหลว: {{message}}",
-    "fit_failed": "พอดีล้มเหลว: {{message}}"
+    "fit_failed": "พอดีล้มเหลว: {{message}}",
+    "merge_audio": "รวมไฟล์เสียง",
+    "merge_audio_desc": "รวมคลิปเสียงเป็นไฟล์ WAV เดียวเพื่อใช้เป็นเสียงอ้างอิงของเสียงพูด",
+    "choose_audio_files": "เลือกไฟล์เสียง",
+    "merge_order_hint": "คลิปจะถูกรวมตามลำดับที่แสดง ใช้ลูกศรเพื่อเปลี่ยนลำดับ",
+    "merge_too_many_files": "เลือกไฟล์ได้ไม่เกิน 20 ไฟล์",
+    "move_up": "ย้ายขึ้น",
+    "move_down": "ย้ายลง",
+    "remove_file": "นำไฟล์ออก",
+    "merge_files": "รวมไฟล์",
+    "merged_audio": "เสียงที่รวมแล้ว",
+    "download_merged": "ดาวน์โหลด WAV ที่รวมแล้ว"
   },
   "projects": {
     "title": "โครงการ",

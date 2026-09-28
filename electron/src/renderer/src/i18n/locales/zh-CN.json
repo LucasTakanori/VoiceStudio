@@ -1510,7 +1510,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "探测失败：{{message}}",
     "parse_failed": "解析失败：{{message}}",
-    "fit_failed": "匹配失败：{{message}}"
+    "fit_failed": "匹配失败：{{message}}",
+    "merge_audio": "合并音频",
+    "merge_audio_desc": "将多个音频片段合并为一个 WAV 文件，用作声音参考。",
+    "choose_audio_files": "选择音频文件",
+    "merge_order_hint": "音频片段将按显示顺序合并。使用箭头调整顺序。",
+    "merge_too_many_files": "最多选择 20 个文件。",
+    "move_up": "上移",
+    "move_down": "下移",
+    "remove_file": "移除文件",
+    "merge_files": "合并文件",
+    "merged_audio": "合并后的音频",
+    "download_merged": "下载合并后的 WAV"
   },
   "projects": {
     "title": "项目",

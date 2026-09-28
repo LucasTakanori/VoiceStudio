@@ -1508,7 +1508,18 @@
     "probe_placeholder": "/Usuarios/usted/Películas/sample.mp4",
     "probe_failed": "Sonda fallida: {{message}}",
     "parse_failed": "Error de análisis: {{message}}",
-    "fit_failed": "Error de ajuste: {{message}}"
+    "fit_failed": "Error de ajuste: {{message}}",
+    "merge_audio": "Unir audio",
+    "merge_audio_desc": "Une clips de audio en un WAV para usarlo como referencia de voz.",
+    "choose_audio_files": "Elegir archivos de audio",
+    "merge_order_hint": "Los clips se unen en el orden mostrado. Usa las flechas para cambiarlo.",
+    "merge_too_many_files": "Elige como máximo 20 archivos.",
+    "move_up": "Mover arriba",
+    "move_down": "Mover abajo",
+    "remove_file": "Quitar archivo",
+    "merge_files": "Unir archivos",
+    "merged_audio": "Audio unido",
+    "download_merged": "Descargar WAV unido"
   },
   "projects": {
     "title": "Proyectos",

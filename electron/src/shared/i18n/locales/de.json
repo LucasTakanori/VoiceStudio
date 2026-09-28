@@ -1386,7 +1386,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "Probe fehlgeschlagen: {{message}}",
     "parse_failed": "Analyse fehlgeschlagen: {{message}}",
-    "fit_failed": "Anpassung fehlgeschlagen: {{message}}"
+    "fit_failed": "Anpassung fehlgeschlagen: {{message}}",
+    "merge_audio": "Audio zusammenführen",
+    "merge_audio_desc": "Audioclips zu einer WAV-Datei verbinden, die du als Stimmreferenz verwenden kannst.",
+    "choose_audio_files": "Audiodateien auswählen",
+    "merge_order_hint": "Die Clips werden in der angezeigten Reihenfolge verbunden. Mit den Pfeilen kannst du die Reihenfolge ändern.",
+    "merge_too_many_files": "Wähle höchstens 20 Dateien aus.",
+    "move_up": "Nach oben",
+    "move_down": "Nach unten",
+    "remove_file": "Datei entfernen",
+    "merge_files": "Dateien zusammenführen",
+    "merged_audio": "Zusammengeführtes Audio",
+    "download_merged": "Zusammengeführte WAV herunterladen"
   },
   "projects": {
     "title": "Projekte",

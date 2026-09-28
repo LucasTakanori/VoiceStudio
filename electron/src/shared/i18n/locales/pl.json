@@ -1386,7 +1386,18 @@
     "probe_placeholder": "/Użytkownicy/ty/Filmy/przykład.mp4",
     "probe_failed": "Sonda nie powiodła się: {{message}}",
     "parse_failed": "Analiza nie powiodła się: {{message}}",
-    "fit_failed": "Dopasowanie nie powiodło się: {{message}}"
+    "fit_failed": "Dopasowanie nie powiodło się: {{message}}",
+    "merge_audio": "Połącz audio",
+    "merge_audio_desc": "Połącz klipy audio w jeden plik WAV, którego możesz użyć jako próbki głosu.",
+    "choose_audio_files": "Wybierz pliki audio",
+    "merge_order_hint": "Klipy zostaną połączone w podanej kolejności. Zmień ją strzałkami.",
+    "merge_too_many_files": "Wybierz maksymalnie 20 plików.",
+    "move_up": "Przenieś wyżej",
+    "move_down": "Przenieś niżej",
+    "remove_file": "Usuń plik",
+    "merge_files": "Połącz pliki",
+    "merged_audio": "Połączone audio",
+    "download_merged": "Pobierz połączony plik WAV"
   },
   "projects": {
     "title": "Projekty",

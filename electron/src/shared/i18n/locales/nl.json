@@ -1386,7 +1386,18 @@
     "probe_placeholder": "/Gebruikers/jij/Films/sample.mp4",
     "probe_failed": "Sonde mislukt: {{message}}",
     "parse_failed": "Parseren mislukt: {{message}}",
-    "fit_failed": "Passen mislukt: {{message}}"
+    "fit_failed": "Passen mislukt: {{message}}",
+    "merge_audio": "Audio samenvoegen",
+    "merge_audio_desc": "Voeg audioclips samen tot één WAV-bestand voor gebruik als stemreferentie.",
+    "choose_audio_files": "Audiobestanden kiezen",
+    "merge_order_hint": "Clips worden in de getoonde volgorde samengevoegd. Gebruik de pijlen om de volgorde te wijzigen.",
+    "merge_too_many_files": "Kies maximaal 20 bestanden.",
+    "move_up": "Omhoog verplaatsen",
+    "move_down": "Omlaag verplaatsen",
+    "remove_file": "Bestand verwijderen",
+    "merge_files": "Bestanden samenvoegen",
+    "merged_audio": "Samengevoegde audio",
+    "download_merged": "Samengevoegde WAV downloaden"
   },
   "projects": {
     "title": "Projecten",

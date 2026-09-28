@@ -1506,7 +1506,18 @@
     "probe_placeholder": "/Users/you/Movies/sample.mp4",
     "probe_failed": "Sond misslyckades: {{message}}",
     "parse_failed": "Analysen misslyckades: {{message}}",
-    "fit_failed": "Anpassningen misslyckades: {{message}}"
+    "fit_failed": "Anpassningen misslyckades: {{message}}",
+    "merge_audio": "Slå ihop ljud",
+    "merge_audio_desc": "Slå ihop ljudklipp till en WAV-fil som du kan använda som röstprov.",
+    "choose_audio_files": "Välj ljudfiler",
+    "merge_order_hint": "Klipp slås ihop i den visade ordningen. Ändra ordningen med pilarna.",
+    "merge_too_many_files": "Välj högst 20 filer.",
+    "move_up": "Flytta upp",
+    "move_down": "Flytta ned",
+    "remove_file": "Ta bort fil",
+    "merge_files": "Slå ihop filer",
+    "merged_audio": "Sammanslaget ljud",
+    "download_merged": "Hämta sammanslagen WAV"
   },
   "projects": {
     "title": "Projekt",

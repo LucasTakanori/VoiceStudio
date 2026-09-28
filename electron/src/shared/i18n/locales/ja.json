@@ -1386,7 +1386,18 @@
     "probe_placeholder": "/ユーザー/あなた/映画/sample.mp4",
     "probe_failed": "プローブが失敗しました: {{message}}",
     "parse_failed": "解析に失敗しました: {{message}}",
-    "fit_failed": "フィットに失敗しました: {{message}}"
+    "fit_failed": "フィットに失敗しました: {{message}}",
+    "merge_audio": "音声を結合",
+    "merge_audio_desc": "音声クリップを1つのWAVにまとめて、ボイス参照音声として使用します。",
+    "choose_audio_files": "音声ファイルを選択",
+    "merge_order_hint": "表示順にクリップを結合します。矢印で順序を変更できます。",
+    "merge_too_many_files": "ファイルは20個まで選択できます。",
+    "move_up": "上へ移動",
+    "move_down": "下へ移動",
+    "remove_file": "ファイルを削除",
+    "merge_files": "ファイルを結合",
+    "merged_audio": "結合した音声",
+    "download_merged": "結合したWAVをダウンロード"
   },
   "projects": {
     "title": "プロジェクト",
