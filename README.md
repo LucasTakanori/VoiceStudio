@@ -99,6 +99,10 @@ can also run `npx skills add debpalash/VoiceStudio`.
 <details>
 <summary><strong>Run the Electron preview from source</strong></summary>
 
+**Using this fork's automatic audio merging?** Follow the
+[Linux installation guide for the audio-merge branch](docs/install/audio-merge-fork-linux.md),
+including an app-menu shortcut with a visible error/log terminal.
+
 ```bash
 git clone https://github.com/debpalash/VoiceStudio.git
 cd VoiceStudio

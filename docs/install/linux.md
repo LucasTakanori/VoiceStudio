@@ -2,6 +2,9 @@
 
 ## Electron desktop (current)
 
+For LucasTakanori's audio-merge fork, use the
+[branch-specific setup and terminal launcher guide](audio-merge-fork-linux.md).
+
 From the repository root, install Bun and uv, then run:
 
 ```sh
